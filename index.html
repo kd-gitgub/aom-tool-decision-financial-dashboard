@@ -206,12 +206,14 @@
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
         
         .chart-wrapper {
             position: relative;
             height: 400px;
             width: 100%;
+            overflow: hidden;
         }
         
         .chart-title {
@@ -235,22 +237,6 @@
         
         .status-indicator.empty {
             background: #ef4444;
-        }
-        
-        .upload-btn {
-            padding: 10px 20px;
-            background: #3b82f6;
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            border: none;
-            transition: background 0.2s;
-        }
-        
-        .upload-btn:hover {
-            background: #2563eb;
         }
     </style>
 </head>
@@ -283,14 +269,6 @@
                         <button class="view-option" data-view="cost">Costs</button>
                         <button class="view-option" data-view="savings">Savings</button>
                     </div>
-                </div>
-                
-                <div class="control-group">
-                    <span class="control-label">Load Data</span>
-                    <label for="fileInput" class="upload-btn">
-                        📁 Select CSV File
-                    </label>
-                    <input type="file" id="fileInput" accept=".csv" style="display: none;">
                 </div>
             </div>
         </div>
@@ -354,22 +332,8 @@
         
         const ctx = document.getElementById('financialChart').getContext('2d');
         
-        // Try to load CSV automatically when page loads
         window.addEventListener('DOMContentLoaded', function() {
             attemptAutoLoad();
-        });
-        
-        // Manual file upload handler
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const csvText = event.target.result;
-                    parseAndLoadData(csvText);
-                };
-                reader.readAsText(file);
-            }
         });
         
         function attemptAutoLoad() {
@@ -382,9 +346,9 @@
                     parseAndLoadData(csvText);
                 })
                 .catch(error => {
-                    console.log('Auto-load failed, use manual upload:', error);
+                    console.log('Auto-load failed:', error);
                     document.getElementById('decisionDropdown').innerHTML = 
-                        '<span class="status-indicator empty"></span>Please load CSV file';
+                        '<span class="status-indicator empty"></span>CSV file not found';
                 });
         }
         
@@ -398,13 +362,7 @@
                         processData(results.data);
                         updateDecisionDropdown();
                         updateDisplay();
-                    } else {
-                        alert('No data found in CSV file');
                     }
-                },
-                error: function(error) {
-                    console.error('CSV parsing error:', error);
-                    alert('Error parsing CSV file');
                 }
             });
         }
@@ -594,7 +552,9 @@
                     data: values,
                     backgroundColor: color + '99',
                     borderColor: color,
-                    borderWidth: 2
+                    borderWidth: 1,
+                    barThickness: 'flex',
+                    maxBarThickness: 30
                 });
             });
             
@@ -614,11 +574,17 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    aspectRatio: 2,
+                    aspectRatio: 3,
                     plugins: {
                         legend: {
                             display: true,
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                }
+                            }
                         },
                         tooltip: {
                             callbacks: {
@@ -631,15 +597,39 @@
                     scales: {
                         x: {
                             stacked: true,
-                            grid: { display: false }
+                            grid: { display: false },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
                         },
                         y: {
                             stacked: true,
                             ticks: {
                                 callback: function(value) {
                                     return '$' + value.toFixed(0) + 'M';
+                                },
+                                font: {
+                                    size: 10
                                 }
                             }
+                        }
+                    },
+                    datasets: {
+                        bar: {
+                            categoryPercentage: 0.6,
+                            barPercentage: 0.8
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 10,
+                            top: 10,
+                            bottom: 10
                         }
                     }
                 }
