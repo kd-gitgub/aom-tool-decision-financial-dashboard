@@ -196,9 +196,10 @@
         }
         
         .metric-suffix {
-            color: #94a3b8;
-            font-size: 14px;
-            font-weight: 400;
+            color: #001c66;
+            font-size: 20px;
+            font-weight: 600;
+            margin-left: 2px;
         }
         
         .chart-container {
@@ -287,28 +288,28 @@
                 <div class="metric-label">Total NPV</div>
                 <div class="metric-value">
                     <span id="totalNPV">$0</span>
-                    <span class="metric-suffix">M</span>
+                    <span class="metric-suffix">k</span>
                 </div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Total Costs</div>
                 <div class="metric-value">
                     <span id="totalCosts">$0</span>
-                    <span class="metric-suffix">M</span>
+                    <span class="metric-suffix">k</span>
                 </div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Total Savings</div>
                 <div class="metric-value">
                     <span id="totalSavings">$0</span>
-                    <span class="metric-suffix">M</span>
+                    <span class="metric-suffix">k</span>
                 </div>
             </div>
             <div class="metric-card">
                 <div class="metric-label">Net Benefit</div>
                 <div class="metric-value">
                     <span id="netBenefit">$0</span>
-                    <span class="metric-suffix">M</span>
+                    <span class="metric-suffix">k</span>
                 </div>
             </div>
         </div>
@@ -344,6 +345,10 @@
         window.addEventListener('DOMContentLoaded', function() {
             attemptAutoLoad();
         });
+        
+        function formatNumber(num) {
+            return num.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
         
         function attemptAutoLoad() {
             fetch('decision-financials.csv')
@@ -499,7 +504,7 @@
                             ${decision.id}. ${decision.name}
                         </div>
                         ${decision.description ? `<div style="font-size: 12px; color: #64748b;">${decision.description}</div>` : ''}
-                        <div style="font-size: 12px; color: #3b82f6; margin-top: 4px;">NPV: $${decision.npv.toFixed(1)}M</div>
+                        <div style="font-size: 12px; color: #3b82f6; margin-top: 4px;">NPV: $${formatNumber(decision.npv * 1000)}<span style="color: #001c66; font-weight: 600; font-size: 14px;">k</span></div>
                     </div>
                 `).join('');
             } else {
@@ -520,10 +525,10 @@
                 totalSavings += decision.savings.reduce((a, b) => a + b, 0);
             });
             
-            document.getElementById('totalNPV').textContent = '$' + totalNPV.toFixed(1);
-            document.getElementById('totalCosts').textContent = '$' + totalCosts.toFixed(1);
-            document.getElementById('totalSavings').textContent = '$' + totalSavings.toFixed(1);
-            document.getElementById('netBenefit').textContent = '$' + (totalSavings - totalCosts).toFixed(1);
+            document.getElementById('totalNPV').textContent = '$' + formatNumber(totalNPV * 1000);
+            document.getElementById('totalCosts').textContent = '$' + formatNumber(totalCosts * 1000);
+            document.getElementById('totalSavings').textContent = '$' + formatNumber(totalSavings * 1000);
+            document.getElementById('netBenefit').textContent = '$' + formatNumber((totalSavings - totalCosts) * 1000);
         }
         
         function updateChart(data) {
@@ -545,11 +550,11 @@
                     const qIndex = decision.quarters.indexOf(quarter);
                     if (qIndex !== -1) {
                         if (currentView === 'net') {
-                            values.push(decision.savings[qIndex] - decision.costs[qIndex]);
+                            values.push((decision.savings[qIndex] - decision.costs[qIndex]) * 1000);
                         } else if (currentView === 'cost') {
-                            values.push(-decision.costs[qIndex]);
+                            values.push(-decision.costs[qIndex] * 1000);
                         } else {
-                            values.push(decision.savings[qIndex]);
+                            values.push(decision.savings[qIndex] * 1000);
                         }
                     } else {
                         values.push(0);
@@ -600,7 +605,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return context.dataset.label + ': $' + context.parsed.y.toFixed(1) + 'M';
+                                    return context.dataset.label + ': $' + formatNumber(context.parsed.y) + 'k';
                                 }
                             }
                         }
@@ -621,11 +626,12 @@
                             stacked: true,
                             ticks: {
                                 callback: function(value) {
-                                    return '$' + value.toFixed(0) + 'M';
+                                    return '$' + formatNumber(value) + 'k';
                                 },
                                 font: {
                                     size: 10
-                                }
+                                },
+                                color: '#334155'
                             },
                             grid: {
                                 drawBorder: false
