@@ -4,18 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Decision Financial Dashboard</title>
-    <!-- 
-    AOM Tool Decision Financial Dashboard
-    Repository: https://github.com/kd-gitgub/aom-tool-decision-financial-dashboard
-    
-    Requirements:
-    - This HTML file must be placed in the same directory as decision-financials.csv
-    - The CSV file must be named exactly "decision-financials.csv"
-    - When hosting on GitHub Pages, both files must be in the repository root or same folder
-    
-    CSV Format:
-    DecisionID,Decision,Description,Quarter,Cost,Savings,NPV
-    -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
@@ -218,15 +206,12 @@
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
         }
         
         .chart-wrapper {
             position: relative;
             height: 400px;
             width: 100%;
-            overflow: hidden;
         }
         
         .chart-title {
@@ -234,11 +219,6 @@
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
-        }
-        
-        #financialChart {
-            display: block;
-            max-width: 100%;
         }
         
         .status-indicator {
@@ -255,6 +235,22 @@
         
         .status-indicator.empty {
             background: #ef4444;
+        }
+        
+        .upload-btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            transition: background 0.2s;
+        }
+        
+        .upload-btn:hover {
+            background: #2563eb;
         }
     </style>
 </head>
@@ -287,6 +283,14 @@
                         <button class="view-option" data-view="cost">Costs</button>
                         <button class="view-option" data-view="savings">Savings</button>
                     </div>
+                </div>
+                
+                <div class="control-group">
+                    <span class="control-label">Load Data</span>
+                    <label for="fileInput" class="upload-btn">
+                        📁 Select CSV File
+                    </label>
+                    <input type="file" id="fileInput" accept=".csv" style="display: none;">
                 </div>
             </div>
         </div>
@@ -343,93 +347,82 @@
         let currentView = 'net';
         let chart = null;
         
-        // Color palette matching the dashboard style
         const colors = [
             '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
             '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
         ];
         
-        // Initialize chart
         const ctx = document.getElementById('financialChart').getContext('2d');
         
-        // Load CSV data on page load
+        // Try to load CSV automatically when page loads
         window.addEventListener('DOMContentLoaded', function() {
-            loadCSVData();
+            attemptAutoLoad();
         });
         
-        function loadCSVData() {
-            // Reset data
-            decisionData = [];
-            selectedDecisions.clear();
-            if (chart) {
-                chart.destroy();
-                chart = null;
+        // Manual file upload handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const csvText = event.target.result;
+                    parseAndLoadData(csvText);
+                };
+                reader.readAsText(file);
             }
-            
-            // Clear the dropdown
-            const menu = document.getElementById('decisionMenu');
-            while (menu.children.length > 1) {
-                menu.removeChild(menu.lastChild);
-            }
-            document.getElementById('selectAll').checked = false;
-            document.getElementById('selectAll').indeterminate = false;
-            
-            // Reset metrics
-            document.getElementById('totalNPV').textContent = '$0';
-            document.getElementById('totalCosts').textContent = '$0';
-            document.getElementById('totalSavings').textContent = '$0';
-            document.getElementById('netBenefit').textContent = '$0';
-            document.getElementById('selectedDecisionsInfo').style.display = 'none';
-            
-            // Reset dropdown button text
-            document.getElementById('decisionDropdown').innerHTML = 
-                '<span class="status-indicator empty"></span>Loading...';
-            
+        });
+        
+        function attemptAutoLoad() {
             fetch('decision-financials.csv')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('CSV file not found');
-                    }
+                    if (!response.ok) throw new Error('CSV not found');
                     return response.text();
                 })
                 .then(csvText => {
-                    Papa.parse(csvText, {
-                        header: true,
-                        dynamicTyping: true,
-                        skipEmptyLines: true,
-                        complete: function(results) {
-                            processData(results.data);
-                            updateDecisionDropdown();
-                            updateDisplay();
-                        },
-                        error: function(error) {
-                            console.error('Error parsing CSV:', error);
-                            document.getElementById('decisionDropdown').innerHTML = 
-                                '<span class="status-indicator empty"></span>Error loading data';
-                        }
-                    });
+                    parseAndLoadData(csvText);
                 })
                 .catch(error => {
-                    console.error('Error loading CSV:', error);
+                    console.log('Auto-load failed, use manual upload:', error);
                     document.getElementById('decisionDropdown').innerHTML = 
-                        '<span class="status-indicator empty"></span>CSV file not found';
+                        '<span class="status-indicator empty"></span>Please load CSV file';
                 });
         }
         
+        function parseAndLoadData(csvText) {
+            Papa.parse(csvText, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data.length > 0) {
+                        processData(results.data);
+                        updateDecisionDropdown();
+                        updateDisplay();
+                    } else {
+                        alert('No data found in CSV file');
+                    }
+                },
+                error: function(error) {
+                    console.error('CSV parsing error:', error);
+                    alert('Error parsing CSV file');
+                }
+            });
+        }
+        
         function processData(rawData) {
-            // Group data by decision
             const grouped = {};
             
             rawData.forEach(row => {
                 const decision = row['Decision'] || row['decision'];
-                const decisionId = row['DecisionID'] || row['decisionid'] || row['Decision_ID'] || row['decision_id'];
+                const decisionId = row['DecisionID'] || row['decisionid'];
+                
                 if (!decision) return;
                 
                 if (!grouped[decision]) {
                     grouped[decision] = {
                         id: parseInt(decisionId) || 0,
                         name: decision,
-                        description: row['Description'] || row['description'] || row['DecisionDescription'] || row['decision_description'] || '',
+                        description: row['Description'] || row['description'] || '',
                         quarters: [],
                         costs: [],
                         savings: [],
@@ -443,21 +436,14 @@
             });
             
             decisionData = Object.values(grouped);
-            
-            // Sort by decision ID
             decisionData.sort((a, b) => a.id - b.id);
             
-            // Update status indicator
-            const indicator = document.querySelector('.status-indicator');
-            indicator.classList.remove('empty');
-            indicator.classList.add('loaded');
             document.getElementById('decisionDropdown').innerHTML = 
                 '<span class="status-indicator loaded"></span>' + decisionData.length + ' Decisions Loaded';
         }
         
         function updateDecisionDropdown() {
             const menu = document.getElementById('decisionMenu');
-            // Clear existing items except Select All
             while (menu.children.length > 1) {
                 menu.removeChild(menu.lastChild);
             }
@@ -465,7 +451,7 @@
             decisionData.forEach((decision, index) => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                item.title = decision.description; // Show description on hover
+                item.title = decision.description;
                 item.innerHTML = `
                     <input type="checkbox" id="decision-${index}" data-decision="${decision.name}">
                     <label for="decision-${index}" style="flex: 1;">
@@ -488,19 +474,16 @@
             });
         }
         
-        // Dropdown toggle
         document.getElementById('decisionDropdown').addEventListener('click', function() {
             document.getElementById('decisionMenu').classList.toggle('show');
         });
         
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.dropdown-container')) {
                 document.getElementById('decisionMenu').classList.remove('show');
             }
         });
         
-        // Select All functionality
         document.getElementById('selectAll').addEventListener('change', function() {
             const checkboxes = document.querySelectorAll('#decisionMenu input[type="checkbox"]:not(#selectAll)');
             checkboxes.forEach(cb => {
@@ -525,7 +508,6 @@
             selectAll.indeterminate = !allChecked && someChecked;
         }
         
-        // View toggle
         document.querySelectorAll('.view-option').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
@@ -537,11 +519,8 @@
         
         function updateDisplay() {
             const selectedData = decisionData.filter(p => selectedDecisions.has(p.name));
-            
-            // Update metrics
             updateMetrics(selectedData);
             
-            // Update selected decisions info
             const infoSection = document.getElementById('selectedDecisionsInfo');
             const listContainer = document.getElementById('selectedDecisionsList');
             
@@ -560,7 +539,6 @@
                 infoSection.style.display = 'none';
             }
             
-            // Update chart
             updateChart(selectedData);
         }
         
@@ -582,15 +560,14 @@
         }
         
         function updateChart(data) {
-            if (data.length === 0) {
-                if (chart) chart.destroy();
-                return;
+            if (chart) {
+                chart.destroy();
+                chart = null;
             }
             
-            // Get all unique quarters
-            const allQuarters = [...new Set(data.flatMap(p => p.quarters))].sort();
+            if (data.length === 0) return;
             
-            // Prepare datasets
+            const allQuarters = [...new Set(data.flatMap(p => p.quarters))].sort();
             const datasets = [];
             
             data.forEach((decision, index) => {
@@ -621,18 +598,12 @@
                 });
             });
             
-            // Update chart title
             const titles = {
                 'net': 'Net Cash Flow (Savings - Costs)',
                 'cost': 'Decision Costs',
                 'savings': 'Decision Savings'
             };
             document.getElementById('chartTitle').textContent = titles[currentView];
-            
-            // Create or update chart
-            if (chart) {
-                chart.destroy();
-            }
             
             chart = new Chart(ctx, {
                 type: 'bar',
@@ -642,7 +613,8 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
                     plugins: {
                         legend: {
                             display: true,
@@ -651,18 +623,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const decisionName = context.dataset.label;
-                                    const decision = data.find(p => `${p.id}. ${p.name}` === decisionName);
-                                    const value = '
-            });
-        }
-    </script>
-</body>
-</html> + context.parsed.y.toFixed(1) + 'M';
-                                    if (decision && decision.description) {
-                                        return [decisionName + ': ' + value, decision.description.substring(0, 50)];
-                                    }
-                                    return decisionName + ': ' + value;
+                                    return context.dataset.label + ': $' + context.parsed.y.toFixed(1) + 'M';
                                 }
                             }
                         }
@@ -670,20 +631,13 @@
                     scales: {
                         x: {
                             stacked: true,
-                            grid: {
-                                display: false
-                            }
+                            grid: { display: false }
                         },
                         y: {
                             stacked: true,
                             ticks: {
                                 callback: function(value) {
-                                    return '
-            });
-        }
-    </script>
-</body>
-</html> + value.toFixed(0) + 'M';
+                                    return '$' + value.toFixed(0) + 'M';
                                 }
                             }
                         }
