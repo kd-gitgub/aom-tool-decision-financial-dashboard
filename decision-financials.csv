@@ -1,0 +1,23 @@
+﻿DecisionID,Decision,Description,Quarter,Cost,Savings,NPV
+1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q1 2024,2.5,0,15.8
+1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q2 2024,3.2,1.5,15.8
+1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q3 2024,2.8,4.2,15.8
+1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q4 2024,1.5,6.5,15.8
+1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q1 2025,0.8,7.2,15.8
+1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q2 2025,0.5,7.8,15.8
+2,Example Decision Beta,Implementation of automated analytics platform,Q1 2024,5,0,22.3
+2,Example Decision Beta,Implementation of automated analytics platform,Q2 2024,4.5,2,22.3
+2,Example Decision Beta,Implementation of automated analytics platform,Q3 2024,3,5.5,22.3
+2,Example Decision Beta,Implementation of automated analytics platform,Q4 2024,2,8,22.3
+2,Example Decision Beta,Implementation of automated analytics platform,Q1 2025,1,9.5,22.3
+2,Example Decision Beta,Implementation of automated analytics platform,Q2 2025,0.5,10.2,22.3
+3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q1 2024,1.8,0,18.5
+3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q2 2024,2.2,3,18.5
+3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q3 2024,1.5,4.8,18.5
+3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q4 2024,0.8,6.2,18.5
+3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q1 2025,0.3,7,18.5
+3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q2 2025,0.2,7.5,18.5
+4,Your Decision Name Here,Your decision description here,Q1 2024,0,0,0
+4,Your Decision Name Here,Your decision description here,Q2 2024,0,0,0
+4,Your Decision Name Here,Your decision description here,Q3 2024,0,0,0
+4,Your Decision Name Here,Your decision description here,Q4 2024,0,0,0

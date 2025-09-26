@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Financial Dashboard</title>
+    <!-- 
+    AOM Tool Decision Financial Dashboard
+    Repository: https://github.com/kd-gitgub/aom-tool-decision-financial-dashboard
+    
+    Requirements:
+    - This HTML file must be placed in the same directory as decision-financials.csv
+    - The CSV file must be named exactly "decision-financials.csv"
+    - When hosting on GitHub Pages, both files must be in the repository root or same folder
+    
+    CSV Format:
+    DecisionID,Decision,Description,Quarter,Cost,Savings,NPV
+    -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3a6f 0%, #2c5282 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dashboard-title {
+            color: #1e3a6f;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .controls-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .dropdown-container {
+            position: relative;
+            min-width: 250px;
+        }
+        
+        .dropdown-button {
+            width: 100%;
+            padding: 10px 36px 10px 12px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #334155;
+            text-align: left;
+            position: relative;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-button:hover {
+            border-color: #3b82f6;
+        }
+        
+        .dropdown-button::after {
+            content: '▼';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 10px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            min-height: 40px;
+        }
+        
+        .dropdown-item:hover {
+            background: #f1f5f9;
+        }
+        
+        .dropdown-item.select-all {
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            align-items: center;
+        }
+        
+        .dropdown-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin-top: 2px;
+        }
+        
+        .view-toggle {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        
+        .view-option {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .view-option.active {
+            background: white;
+            color: #1e3a6f;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-label {
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .metric-value {
+            color: #1e3a6f;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .metric-suffix {
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 400;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            color: #1e3a6f;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.loaded {
+            background: #10b981;
+        }
+        
+        .status-indicator.empty {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Decision Financial Dashboard</h1>
+            
+            <div class="controls-row">
+                <div class="control-group">
+                    <span class="control-label">Decisions</span>
+                    <div class="dropdown-container">
+                        <button class="dropdown-button" id="decisionDropdown">
+                            <span class="status-indicator empty"></span>
+                            Select Decisions
+                        </button>
+                        <div class="dropdown-menu" id="decisionMenu">
+                            <div class="dropdown-item select-all">
+                                <input type="checkbox" id="selectAll">
+                                <label for="selectAll">Select All</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <span class="control-label">View</span>
+                    <div class="view-toggle">
+                        <button class="view-option active" data-view="net">Net Cash</button>
+                        <button class="view-option" data-view="cost">Costs</button>
+                        <button class="view-option" data-view="savings">Savings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metrics-row">
+            <div class="metric-card">
+                <div class="metric-label">Total NPV</div>
+                <div class="metric-value">
+                    <span id="totalNPV">$0</span>
+                    <span class="metric-suffix">M</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Costs</div>
+                <div class="metric-value">
+                    <span id="totalCosts">$0</span>
+                    <span class="metric-suffix">M</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Savings</div>
+                <div class="metric-value">
+                    <span id="totalSavings">$0</span>
+                    <span class="metric-suffix">M</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Net Benefit</div>
+                <div class="metric-value">
+                    <span id="netBenefit">$0</span>
+                    <span class="metric-suffix">M</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="selectedDecisionsInfo" style="display: none;">
+            <div class="dashboard-header" style="margin-bottom: 24px;">
+                <div class="control-label" style="margin-bottom: 12px;">SELECTED DECISIONS</div>
+                <div id="selectedDecisionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;"></div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <h2 class="chart-title" id="chartTitle">Quarterly Financial Profile</h2>
+            <canvas id="financialChart"></canvas>
+        </div>
+    </div>
+    
+    <script>
+        let decisionData = [];
+        let selectedDecisions = new Set();
+        let currentView = 'net';
+        let chart = null;
+        
+        // Color palette matching the dashboard style
+        const colors = [
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+        ];
+        
+        // Initialize chart
+        const ctx = document.getElementById('financialChart').getContext('2d');
+        
+        // Load CSV data on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadCSVData();
+        });
+        
+        function loadCSVData() {
+            // Reset data
+            decisionData = [];
+            selectedDecisions.clear();
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+            
+            // Clear the dropdown
+            const menu = document.getElementById('decisionMenu');
+            while (menu.children.length > 1) {
+                menu.removeChild(menu.lastChild);
+            }
+            document.getElementById('selectAll').checked = false;
+            document.getElementById('selectAll').indeterminate = false;
+            
+            // Reset metrics
+            document.getElementById('totalNPV').textContent = '$0';
+            document.getElementById('totalCosts').textContent = '$0';
+            document.getElementById('totalSavings').textContent = '$0';
+            document.getElementById('netBenefit').textContent = '$0';
+            document.getElementById('selectedDecisionsInfo').style.display = 'none';
+            
+            // Reset dropdown button text
+            document.getElementById('decisionDropdown').innerHTML = 
+                '<span class="status-indicator empty"></span>Loading...';
+            
+            fetch('decision-financials.csv')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('CSV file not found');
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    Papa.parse(csvText, {
+                        header: true,
+                        dynamicTyping: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            processData(results.data);
+                            updateDecisionDropdown();
+                            updateDisplay();
+                        },
+                        error: function(error) {
+                            console.error('Error parsing CSV:', error);
+                            document.getElementById('decisionDropdown').innerHTML = 
+                                '<span class="status-indicator empty"></span>Error loading data';
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading CSV:', error);
+                    document.getElementById('decisionDropdown').innerHTML = 
+                        '<span class="status-indicator empty"></span>CSV file not found';
+                });
+        }
+        
+        function processData(rawData) {
+            // Group data by decision
+            const grouped = {};
+            
+            rawData.forEach(row => {
+                const decision = row['Decision'] || row['decision'];
+                const decisionId = row['DecisionID'] || row['decisionid'] || row['Decision_ID'] || row['decision_id'];
+                if (!decision) return;
+                
+                if (!grouped[decision]) {
+                    grouped[decision] = {
+                        id: parseInt(decisionId) || 0,
+                        name: decision,
+                        description: row['Description'] || row['description'] || row['DecisionDescription'] || row['decision_description'] || '',
+                        quarters: [],
+                        costs: [],
+                        savings: [],
+                        npv: parseFloat(row['NPV'] || row['npv'] || 0)
+                    };
+                }
+                
+                grouped[decision].quarters.push(row['Quarter'] || row['quarter']);
+                grouped[decision].costs.push(parseFloat(row['Cost'] || row['cost'] || 0));
+                grouped[decision].savings.push(parseFloat(row['Savings'] || row['savings'] || 0));
+            });
+            
+            decisionData = Object.values(grouped);
+            
+            // Sort by decision ID
+            decisionData.sort((a, b) => a.id - b.id);
+            
+            // Update status indicator
+            const indicator = document.querySelector('.status-indicator');
+            indicator.classList.remove('empty');
+            indicator.classList.add('loaded');
+            document.getElementById('decisionDropdown').innerHTML = 
+                '<span class="status-indicator loaded"></span>' + decisionData.length + ' Decisions Loaded';
+        }
+        
+        function updateDecisionDropdown() {
+            const menu = document.getElementById('decisionMenu');
+            // Clear existing items except Select All
+            while (menu.children.length > 1) {
+                menu.removeChild(menu.lastChild);
+            }
+            
+            decisionData.forEach((decision, index) => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.title = decision.description; // Show description on hover
+                item.innerHTML = `
+                    <input type="checkbox" id="decision-${index}" data-decision="${decision.name}">
+                    <label for="decision-${index}" style="flex: 1;">
+                        <span style="font-weight: 600; color: #1e3a6f;">${decision.id}.</span>
+                        ${decision.name}
+                        ${decision.description ? `<div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${decision.description.substring(0, 50)}${decision.description.length > 50 ? '...' : ''}</div>` : ''}
+                    </label>
+                `;
+                menu.appendChild(item);
+                
+                item.querySelector('input').addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedDecisions.add(decision.name);
+                    } else {
+                        selectedDecisions.delete(decision.name);
+                    }
+                    updateSelectAll();
+                    updateDisplay();
+                });
+            });
+        }
+        
+        // Dropdown toggle
+        document.getElementById('decisionDropdown').addEventListener('click', function() {
+            document.getElementById('decisionMenu').classList.toggle('show');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-container')) {
+                document.getElementById('decisionMenu').classList.remove('show');
+            }
+        });
+        
+        // Select All functionality
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#decisionMenu input[type="checkbox"]:not(#selectAll)');
+            checkboxes.forEach(cb => {
+                cb.checked = this.checked;
+                const decisionName = cb.dataset.decision;
+                if (this.checked) {
+                    selectedDecisions.add(decisionName);
+                } else {
+                    selectedDecisions.delete(decisionName);
+                }
+            });
+            updateDisplay();
+        });
+        
+        function updateSelectAll() {
+            const checkboxes = document.querySelectorAll('#decisionMenu input[type="checkbox"]:not(#selectAll)');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+            
+            const selectAll = document.getElementById('selectAll');
+            selectAll.checked = allChecked;
+            selectAll.indeterminate = !allChecked && someChecked;
+        }
+        
+        // View toggle
+        document.querySelectorAll('.view-option').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentView = this.dataset.view;
+                updateDisplay();
+            });
+        });
+        
+        function updateDisplay() {
+            const selectedData = decisionData.filter(p => selectedDecisions.has(p.name));
+            
+            // Update metrics
+            updateMetrics(selectedData);
+            
+            // Update selected decisions info
+            const infoSection = document.getElementById('selectedDecisionsInfo');
+            const listContainer = document.getElementById('selectedDecisionsList');
+            
+            if (selectedData.length > 0) {
+                infoSection.style.display = 'block';
+                listContainer.innerHTML = selectedData.map(decision => `
+                    <div style="padding: 12px; background: #f8fafc; border-radius: 8px; border-left: 4px solid ${colors[decision.id % colors.length]};">
+                        <div style="font-weight: 600; color: #1e3a6f; margin-bottom: 4px;">
+                            ${decision.id}. ${decision.name}
+                        </div>
+                        ${decision.description ? `<div style="font-size: 12px; color: #64748b;">${decision.description}</div>` : ''}
+                        <div style="font-size: 12px; color: #3b82f6; margin-top: 4px;">NPV: $${decision.npv.toFixed(1)}M</div>
+                    </div>
+                `).join('');
+            } else {
+                infoSection.style.display = 'none';
+            }
+            
+            // Update chart
+            updateChart(selectedData);
+        }
+        
+        function updateMetrics(data) {
+            let totalNPV = 0;
+            let totalCosts = 0;
+            let totalSavings = 0;
+            
+            data.forEach(decision => {
+                totalNPV += decision.npv || 0;
+                totalCosts += decision.costs.reduce((a, b) => a + b, 0);
+                totalSavings += decision.savings.reduce((a, b) => a + b, 0);
+            });
+            
+            document.getElementById('totalNPV').textContent = '$' + totalNPV.toFixed(1);
+            document.getElementById('totalCosts').textContent = '$' + totalCosts.toFixed(1);
+            document.getElementById('totalSavings').textContent = '$' + totalSavings.toFixed(1);
+            document.getElementById('netBenefit').textContent = '$' + (totalSavings - totalCosts).toFixed(1);
+        }
+        
+        function updateChart(data) {
+            if (data.length === 0) {
+                if (chart) chart.destroy();
+                return;
+            }
+            
+            // Get all unique quarters
+            const allQuarters = [...new Set(data.flatMap(p => p.quarters))].sort();
+            
+            // Prepare datasets
+            const datasets = [];
+            
+            data.forEach((decision, index) => {
+                const color = colors[index % colors.length];
+                let values = [];
+                
+                allQuarters.forEach(quarter => {
+                    const qIndex = decision.quarters.indexOf(quarter);
+                    if (qIndex !== -1) {
+                        if (currentView === 'net') {
+                            values.push(decision.savings[qIndex] - decision.costs[qIndex]);
+                        } else if (currentView === 'cost') {
+                            values.push(-decision.costs[qIndex]);
+                        } else {
+                            values.push(decision.savings[qIndex]);
+                        }
+                    } else {
+                        values.push(0);
+                    }
+                });
+                
+                datasets.push({
+                    label: `${decision.id}. ${decision.name}`,
+                    data: values,
+                    backgroundColor: color + '99',
+                    borderColor: color,
+                    borderWidth: 2
+                });
+            });
+            
+            // Update chart title
+            const titles = {
+                'net': 'Net Cash Flow (Savings - Costs)',
+                'cost': 'Decision Costs',
+                'savings': 'Decision Savings'
+            };
+            document.getElementById('chartTitle').textContent = titles[currentView];
+            
+            // Create or update chart
+            if (chart) {
+                chart.destroy();
+            }
+            
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: allQuarters,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0) + 'M';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const decisionName = context.dataset.label;
+                                    const decision = data.find(p => `${p.id}. ${p.name}` === decisionName);
+                                    const value = '$' + context.parsed.y.toFixed(1) + 'M';
+                                    if (decision && decision.description) {
+                                        return [decisionName + ': ' + value, decision.description.substring(0, 50)];
+                                    }
+                                    return decisionName + ': ' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
