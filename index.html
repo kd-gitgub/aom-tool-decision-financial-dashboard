@@ -219,7 +219,14 @@
             padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             position: relative;
-            height: 500px;
+            overflow: hidden;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            overflow: hidden;
         }
         
         .chart-title {
@@ -230,7 +237,8 @@
         }
         
         #financialChart {
-            max-height: 400px;
+            display: block;
+            max-width: 100%;
         }
         
         .status-indicator {
@@ -323,7 +331,7 @@
         
         <div class="chart-container">
             <h2 class="chart-title" id="chartTitle">Quarterly Financial Profile</h2>
-            <div style="position: relative; height: 400px;">
+            <div class="chart-wrapper">
                 <canvas id="financialChart"></canvas>
             </div>
         </div>
