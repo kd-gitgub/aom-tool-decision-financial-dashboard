@@ -218,6 +218,8 @@
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            height: 500px;
         }
         
         .chart-title {
@@ -225,6 +227,10 @@
             font-size: 18px;
             font-weight: 600;
             margin-bottom: 20px;
+        }
+        
+        #financialChart {
+            max-height: 400px;
         }
         
         .status-indicator {
@@ -317,7 +323,9 @@
         
         <div class="chart-container">
             <h2 class="chart-title" id="chartTitle">Quarterly Financial Profile</h2>
-            <canvas id="financialChart"></canvas>
+            <div style="position: relative; height: 400px;">
+                <canvas id="financialChart"></canvas>
+            </div>
         </div>
     </div>
     
@@ -627,6 +635,30 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const decisionName = context.dataset.label;
+                                    const decision = data.find(p => `${p.id}. ${p.name}` === decisionName);
+                                    const value = '
+            });
+        }
+    </script>
+</body>
+</html> + context.parsed.y.toFixed(1) + 'M';
+                                    if (decision && decision.description) {
+                                        return [decisionName + ': ' + value, decision.description.substring(0, 50)];
+                                    }
+                                    return decisionName + ': ' + value;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         x: {
                             stacked: true,
@@ -638,26 +670,12 @@
                             stacked: true,
                             ticks: {
                                 callback: function(value) {
-                                    return '$' + value.toFixed(0) + 'M';
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const decisionName = context.dataset.label;
-                                    const decision = data.find(p => `${p.id}. ${p.name}` === decisionName);
-                                    const value = '$' + context.parsed.y.toFixed(1) + 'M';
-                                    if (decision && decision.description) {
-                                        return [decisionName + ': ' + value, decision.description.substring(0, 50)];
-                                    }
-                                    return decisionName + ': ' + value;
+                                    return '
+            });
+        }
+    </script>
+</body>
+</html> + value.toFixed(0) + 'M';
                                 }
                             }
                         }
