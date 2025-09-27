@@ -1,5 +1,5 @@
 ﻿DecisionID,Decision,Description,Quarter,Cost,Savings,NPV
-1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q1 2024,2.5,0,15.8
+1,Soda data observability,Cloud infrastructure migration to reduce operational costs,Q1 2024,2.5,12,15.8
 1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q2 2024,3.2,1.5,15.8
 1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q3 2024,2.8,4.2,15.8
 1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q4 2024,1.5,6.5,15.8
