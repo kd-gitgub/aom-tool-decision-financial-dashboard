@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Decision Financial Dashboard</title>
+    <title>Analytics Tooling Program Investment Profile</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
@@ -18,6 +18,7 @@
             background: linear-gradient(135deg, #1e3a6f 0%, #2c5282 100%);
             min-height: 100vh;
             padding: 15px;
+            color: #001C66;
         }
         
         .dashboard-container {
@@ -34,7 +35,7 @@
         }
         
         .dashboard-title {
-            color: #1e3a6f;
+            color: #001C66;
             font-size: 24px;
             font-weight: 600;
         }
@@ -54,7 +55,7 @@
         
         .control-label {
             font-size: 11px;
-            color: #64748b;
+            color: #001C66;
             text-transform: none;
             letter-spacing: 0.5px;
             font-weight: 600;
@@ -87,7 +88,7 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
-            color: #334155;
+            color: #001C66;
             text-align: left;
             position: relative;
             transition: all 0.2s;
@@ -104,7 +105,7 @@
             top: 50%;
             transform: translateY(-50%);
             font-size: 10px;
-            color: #94a3b8;
+            color: #001C66;
         }
         
         .dropdown-menu {
@@ -135,6 +136,7 @@
             cursor: pointer;
             transition: background 0.2s;
             min-height: 32px;
+            color: #001C66;
         }
         
         .dropdown-item:hover {
@@ -165,7 +167,7 @@
             padding: 6px 12px;
             border: none;
             background: transparent;
-            color: #64748b;
+            color: #001C66;
             cursor: pointer;
             border-radius: 4px;
             font-size: 13px;
@@ -175,7 +177,7 @@
         
         .view-option.active {
             background: white;
-            color: #1e3a6f;
+            color: #001C66;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
@@ -219,7 +221,7 @@
         }
         
         .metric-value {
-            color: #1e3a6f;
+            color: #001C66;
             font-size: 24px;
             font-weight: 700;
             display: flex;
@@ -254,7 +256,7 @@
         }
         
         .chart-title {
-            color: #1e3a6f;
+            color: #001C66;
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 16px;
@@ -328,7 +330,7 @@
             align-items: center;
             gap: 6px;
             font-size: 12px;
-            color: #4a5568;
+            color: #001C66;
         }
         
         .legend-color {
@@ -340,20 +342,25 @@
         .decision-chip {
             display: inline-flex;
             align-items: center;
-            padding: 3px 8px;
+            padding: 2px 6px 2px 0px;
             background: #f8fafc;
-            border-radius: 14px;
-            border: 1.5px solid;
+            border-radius: 0px;
+            border: none;
             font-size: 11px;
             font-weight: 500;
-            color: #1e3a6f;
+            color: #001C66;
             transition: all 0.2s;
             cursor: default;
-            height: 20px;
+            height: 18px;
             white-space: nowrap;
         }
         
-        .decision-chip:hover {
+        .decision-chip.inactive {
+            opacity: 0.4;
+            background: #f1f5f9;
+        }
+        
+        .decision-chip:hover:not(.inactive) {
             transform: translateY(-1px);
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
         }
@@ -362,7 +369,7 @@
 <body>
     <div class="dashboard-container">
         <div class="dashboard-header">
-            <h1 class="dashboard-title" style="margin-bottom: 12px;">Decision Financial Dashboard</h1>
+            <h1 class="dashboard-title" style="margin-bottom: 12px;">Analytics Tooling Program Investment Profile</h1>
             
             <div class="metrics-row" style="margin-bottom: 0; background: rgba(248, 250, 252, 0.5); padding: 8px; border-radius: 6px;">
                 <div class="metric-card">
@@ -396,9 +403,9 @@
             </div>
         </div>
         
-        <div class="dashboard-header" style="margin-bottom: 16px;">
-            <div class="controls-row">
-                <div class="control-group">
+        <div class="dashboard-header" style="margin-bottom: 16px; padding: 10px 24px;">
+            <div class="controls-row" style="gap: 12px;">
+                <div class="control-group" style="gap: 4px;">
                     <span class="control-label">Decisions</span>
                     <div class="dropdown-container">
                         <button class="dropdown-button" id="decisionDropdown">
@@ -414,20 +421,20 @@
                     </div>
                 </div>
                 
-                <div class="control-group">
+                <div class="control-group" style="gap: 4px;">
                     <span class="control-label">View</span>
                     <div class="view-toggle">
-                        <button class="view-option active" data-view="detailed">Detailed</button>
-                        <button class="view-option" data-view="aggregated">Aggregated</button>
+                        <button class="view-option" data-view="aggregated">Program</button>
+                        <button class="view-option active" data-view="detailed">Decisions</button>
                     </div>
                 </div>
                 
-                <div class="control-group active-decisions-group" id="activeDecisionsGroup" style="display: none;">
-                    <span class="control-label" style="display: inline-flex; align-items: center; gap: 6px;">
-                        Active Decisions
-                        <span style="font-size: 10px; color: #64748b; background: #f1f5f9; padding: 1px 6px; border-radius: 8px; font-weight: 600;" id="decisionCount">0</span>
+                <div class="control-group active-decisions-group" id="activeDecisionsGroup" style="gap: 3px;">
+                    <span class="control-label" style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                        All Decisions
+                        <span style="font-size: 10px; color: #001C66; background: #f1f5f9; padding: 1px 6px; border-radius: 8px; font-weight: 600;" id="decisionCount">0 selected</span>
                     </span>
-                    <div id="selectedDecisionsList" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                    <div id="selectedDecisionsList" style="display: flex; flex-wrap: wrap; gap: 4px; margin-left: 0; padding-left: 0;"></div>
                 </div>
             </div>
         </div>
@@ -600,9 +607,9 @@
                 item.innerHTML = `
                     <input type="checkbox" id="decision-${index}" data-decision="${decision.name}">
                     <label for="decision-${index}" style="flex: 1; cursor: pointer;">
-                        <span style="font-weight: 600; color: #1e3a6f;">${decision.id}.</span>
+                        <span style="font-weight: 600; color: #001C66;">${decision.id}.</span>
                         ${decision.name}
-                        ${decision.description ? `<div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${decision.description.substring(0, 50)}${decision.description.length > 50 ? '...' : ''}</div>` : ''}
+                        ${decision.description ? `<div style="font-size: 11px; color: #001C66; opacity: 0.7; margin-top: 2px;">${decision.description.substring(0, 50)}${decision.description.length > 50 ? '...' : ''}</div>` : ''}
                     </label>
                 `;
                 menu.appendChild(item);
@@ -669,38 +676,27 @@
             const activeGroup = document.getElementById('activeDecisionsGroup');
             const listContainer = document.getElementById('selectedDecisionsList');
             
-            if (selectedData.length > 0) {
-                activeGroup.style.display = 'flex';
-                const countElement = document.getElementById('decisionCount');
-                if (countElement) {
-                    countElement.textContent = selectedData.length;
-                }
-                listContainer.innerHTML = selectedData.map(decision => {
-                    // Truncate long names for compactness
-                    const displayName = decision.name.length > 16 ? 
-                        decision.name.substring(0, 13) + '...' : 
-                        decision.name;
-                    
-                    return `
-                        <div class="decision-chip" 
-                             style="border-color: ${decisionColors[decision.id % decisionColors.length]}33;"
-                             title="${decision.name}${decision.description ? ': ' + decision.description : ''}">
-                            <span style="
-                                display: inline-block;
-                                width: 5px;
-                                height: 5px;
-                                border-radius: 50%;
-                                background: ${decisionColors[decision.id % decisionColors.length]};
-                                margin-right: 4px;
-                            "></span>
-                            <span style="font-weight: 700; margin-right: 2px;">${decision.id}.</span>
-                            ${displayName}
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                activeGroup.style.display = 'none';
+            // Always show all decisions, but differentiate between selected and unselected
+            const countElement = document.getElementById('decisionCount');
+            if (countElement) {
+                countElement.textContent = `${selectedData.length} selected`;
             }
+            
+            listContainer.innerHTML = decisionData.map(decision => {
+                const isSelected = selectedDecisions.has(decision.name);
+                // Truncate long names for compactness - increased from 16/13 to 28/25
+                const displayName = decision.name.length > 28 ? 
+                    decision.name.substring(0, 25) + '...' : 
+                    decision.name;
+                
+                return `
+                    <div class="decision-chip ${isSelected ? '' : 'inactive'}" 
+                         title="${decision.name}${decision.description ? ': ' + decision.description : ''}">
+                        <span style="font-weight: 700; margin-right: 2px;">${decision.id}.</span>
+                        ${displayName}
+                    </div>
+                `;
+            }).join('');
             
             updateWaterfallChart(selectedData);
             updateLegend();
@@ -796,7 +792,7 @@
                 container.append("div")
                     .style("text-align", "center")
                     .style("padding", "50px")
-                    .style("color", "#64748b")
+                    .style("color", "#001C66")
                     .text("Please select decisions to display the waterfall chart");
                 return;
             }
@@ -915,7 +911,7 @@
             bars.on("mouseover", function(event, d) {
                     d3.select(this)
                         .attr("opacity", 1)
-                        .attr("stroke", "#2d3748")
+                        .attr("stroke", "#001C66")
                         .attr("stroke-width", 2);
                     
                     const tooltip = document.getElementById("tooltip");
@@ -949,7 +945,7 @@
                     .attr("text-anchor", "middle")
                     .style("font-size", "14px")
                     .style("font-weight", "600")
-                    .style("fill", "#1e3a6f")
+                    .style("fill", "#001C66")
                     .text(boundary.quarter);
                 
                 xAxis.append("line")
@@ -957,7 +953,7 @@
                     .attr("x2", centerX)
                     .attr("y1", 0)
                     .attr("y2", 6)
-                    .attr("stroke", "#4a5568")
+                    .attr("stroke", "#001C66")
                     .attr("stroke-width", 1);
             });
             
@@ -966,7 +962,7 @@
                 .attr("x2", width)
                 .attr("y1", 0)
                 .attr("y2", 0)
-                .attr("stroke", "#4a5568")
+                .attr("stroke", "#001C66")
                 .attr("stroke-width", 1);
             
             // Y-axis
@@ -974,7 +970,12 @@
                 .tickFormat(d => `$${formatNumber(d)}k`);
             
             g.append("g")
-                .call(yAxis);
+                .call(yAxis)
+                .selectAll("text")
+                .style("fill", "#001C66");
+            
+            g.selectAll(".domain, .tick line")
+                .style("stroke", "#001C66");
             
             // Add axis label
             g.append("text")
@@ -983,7 +984,7 @@
                 .attr("x", 0 - (height / 2))
                 .attr("text-anchor", "middle")
                 .style("font-size", "12px")
-                .style("fill", "#4a5568")
+                .style("fill", "#001C66")
                 .text("Cashflow ($k)");
             
             // Add zero line
@@ -992,7 +993,7 @@
                 .attr("x2", width)
                 .attr("y1", y(0))
                 .attr("y2", y(0))
-                .attr("stroke", "#718096")
+                .attr("stroke", "#001C66")
                 .attr("stroke-width", 1.5)
                 .attr("opacity", 0.7);
             
