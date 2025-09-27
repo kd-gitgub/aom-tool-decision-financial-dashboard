@@ -337,25 +337,6 @@
             border-radius: 2px;
         }
         
-        .aggregated-view-option {
-            padding: 8px 16px;
-            border: 2px solid #e2e8f0;
-            background: white;
-            color: #64748b;
-            cursor: pointer;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-            margin-left: 12px;
-        }
-        
-        .aggregated-view-option.active {
-            background: #1e3a6f;
-            color: white;
-            border-color: #1e3a6f;
-        }
-        
         .decision-chip {
             display: inline-flex;
             align-items: center;
@@ -475,154 +456,118 @@
         ];
         
         window.addEventListener('DOMContentLoaded', function() {
-            // Load from decision-financials.csv file
+            // Try to load from decision-financials.csv file
             attemptAutoLoad();
-            
-            // To use dummy data for testing instead, comment out the line above and uncomment:
-            // loadDummyData();
         });
         
         function formatNumber(num) {
             return Math.abs(num).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
         
-        function loadDummyData() {
-            // Generate dummy data for testing
-            const dummyCSV = generateDummyCSV();
-            parseAndLoadData(dummyCSV);
-            
-            // Optionally auto-select first few decisions for demo
-            // Uncomment the setTimeout block below to auto-select decisions
-            /*
-            setTimeout(() => {
-                const firstThree = decisionData.slice(0, 3);
-                firstThree.forEach((decision, index) => {
-                    selectedDecisions.add(decision.name);
-                    const checkbox = document.getElementById(`decision-${index}`);
-                    if (checkbox) checkbox.checked = true;
-                });
-                updateSelectAll();
-                updateDisplay();
-            }, 100);
-            */
-        }
-        
-        function generateDummyCSV() {
-            const decisions = [
-                { id: 1, name: "Cloud Migration", description: "Migrate infrastructure to cloud services for scalability" },
-                { id: 2, name: "Process Automation", description: "Automate manual processes using RPA technology" },
-                { id: 3, name: "Data Analytics Platform", description: "Implement advanced analytics for better insights" },
-                { id: 4, name: "Security Enhancement", description: "Upgrade cybersecurity infrastructure and protocols" },
-                { id: 5, name: "Customer Portal", description: "Develop self-service customer portal to reduce support costs" },
-                { id: 6, name: "Supply Chain Optimization", description: "Optimize supply chain with AI-driven forecasting" },
-                { id: 7, name: "Remote Work Infrastructure", description: "Enhance remote work capabilities and tools" },
-                { id: 8, name: "Green Energy Initiative", description: "Transition to renewable energy sources" },
-                { id: 9, name: "Training Program", description: "Comprehensive employee skill development program" },
-                { id: 10, name: "ERP System Upgrade", description: "Modernize enterprise resource planning system" }
-            ];
-            
-            const quarters = ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"];
-            
-            let csvRows = ["DecisionID,Decision,Description,Quarter,Cost,Savings,NPV"];
-            
-            decisions.forEach(decision => {
-                let allCosts = [];
-                let allSavings = [];
-                
-                // First, generate all quarters data
-                quarters.forEach((quarter, qIndex) => {
-                    let cost, savings;
-                    
-                    if (qIndex === 0) {
-                        // Higher initial costs
-                        cost = Math.floor(Math.random() * 150 + 100); // 100-250k
-                        savings = Math.floor(Math.random() * 50 + 20); // 20-70k
-                    } else if (qIndex === 1) {
-                        // Moderate costs, increasing savings
-                        cost = Math.floor(Math.random() * 100 + 50); // 50-150k
-                        savings = Math.floor(Math.random() * 100 + 50); // 50-150k
-                    } else {
-                        // Lower costs, higher savings
-                        cost = Math.floor(Math.random() * 50 + 20); // 20-70k
-                        savings = Math.floor(Math.random() * 150 + 100); // 100-250k
-                    }
-                    
-                    allCosts.push(cost);
-                    allSavings.push(savings);
-                });
-                
-                // Calculate NPV (simplified - just total savings minus total costs)
-                const totalCosts = allCosts.reduce((a, b) => a + b, 0);
-                const totalSavings = allSavings.reduce((a, b) => a + b, 0);
-                const npv = totalSavings - totalCosts;
-                
-                // Now create the CSV rows with the same NPV for all quarters of a decision
-                quarters.forEach((quarter, qIndex) => {
-                    csvRows.push(`${decision.id},${decision.name},"${decision.description}",${quarter},${allCosts[qIndex]},${allSavings[qIndex]},${npv}`);
-                });
-            });
-            
-            return csvRows.join('\n');
-        }
-        
         function attemptAutoLoad() {
+            console.log('Attempting to load decision-financials.csv...');
+            
+            // Try the expected filename first
             fetch('decision-financials.csv')
                 .then(response => {
-                    if (!response.ok) throw new Error('CSV not found');
+                    console.log('CSV fetch response:', response.status, response.statusText);
+                    if (!response.ok) {
+                        throw new Error(`CSV not found (status: ${response.status})`);
+                    }
                     return response.text();
                 })
                 .then(csvText => {
-                    parseAndLoadData(csvText);
+                    console.log('CSV loaded successfully, length:', csvText.length);
+                    console.log('First 200 characters:', csvText.substring(0, 200));
+                    parseAndLoadData(csvText, false);
                 })
                 .catch(error => {
-                    console.log('Auto-load failed:', error);
-                    document.getElementById('decisionDropdown').innerHTML = 
-                        '<span class="status-indicator empty"></span>decision-financials.csv not found';
+                    console.error('Primary CSV load failed:', error);
                     
-                    // Optionally load dummy data as fallback for testing
-                    // setTimeout(() => loadDummyData(), 1000);
+                    // Try alternative filename without hyphen
+                    console.log('Trying alternative: decisionfinancials.csv...');
+                    return fetch('decisionfinancials.csv')
+                        .then(response => {
+                            if (!response.ok) throw new Error('Alternative also not found');
+                            console.log('Alternative CSV found!');
+                            return response.text();
+                        })
+                        .then(csvText => {
+                            parseAndLoadData(csvText, false);
+                        })
+                        .catch(altError => {
+                            console.error('Both filenames failed:', altError);
+                            document.getElementById('decisionDropdown').innerHTML = 
+                                '<span class="status-indicator empty"></span>Loading test data...';
+                            
+                            // Fallback to dummy data for testing
+                            setTimeout(() => {
+                                console.log('Loading dummy data as fallback');
+                                loadDummyData();
+                            }, 500);
+                        });
                 });
         }
         
-        function parseAndLoadData(csvText) {
+        function parseAndLoadData(csvText, isTestData = false) {
+            console.log('Parsing CSV data...');
             Papa.parse(csvText, {
                 header: true,
                 dynamicTyping: true,
                 skipEmptyLines: true,
                 complete: function(results) {
+                    console.log('Parse complete. Rows found:', results.data.length);
                     if (results.data.length > 0) {
-                        processData(results.data);
+                        console.log('First row sample:', results.data[0]);
+                        processData(results.data, isTestData);
                         updateDecisionDropdown();
                         updateDisplay();
+                    } else {
+                        console.error('No data found in CSV');
+                        document.getElementById('decisionDropdown').innerHTML = 
+                            '<span class="status-indicator empty"></span>No data in CSV';
                     }
+                },
+                error: function(error) {
+                    console.error('Papa Parse error:', error);
                 }
             });
         }
         
-        function processData(rawData) {
+        function processData(rawData, isTestData = false) {
             const grouped = {};
+            console.log('Processing', rawData.length, 'rows of data');
             
-            rawData.forEach(row => {
-                const decision = row['Decision'] || row['decision'];
-                const decisionId = row['DecisionID'] || row['decisionid'] || row['DecisionId'];
+            // Log column names to debug potential header issues
+            if (rawData.length > 0) {
+                console.log('Column names found:', Object.keys(rawData[0]));
+            }
+            
+            rawData.forEach((row, index) => {
+                // Try multiple variations of column names to handle potential spaces
+                const decision = row['Decision'] || row['decision'] || row[' Decision'] || row['Decision '];
+                const decisionId = row['DecisionID'] || row['decisionid'] || row['DecisionId'] || row[' DecisionID'] || row['DecisionID '];
                 
-                if (!decision) return;
+                if (!decision) {
+                    console.log(`Row ${index} skipped - no Decision field found. Row data:`, row);
+                    return;
+                }
                 
                 if (!grouped[decision]) {
                     grouped[decision] = {
                         id: parseInt(decisionId) || 0,
-                        name: decision,
-                        description: row['Description'] || row['description'] || '',
+                        name: decision.trim ? decision.trim() : decision,
+                        description: (row['Description'] || row['description'] || row[' Description'] || '').trim ? (row['Description'] || row['description'] || '').trim() : '',
                         quarters: [],
                         costs: [],
                         savings: [],
-                        npv: parseFloat(row['NPV'] || row['npv'] || 0)
+                        npv: parseFloat(row['NPV'] || row['npv'] || row[' NPV'] || 0)
                     };
                 }
                 
-                const quarter = row['Quarter'] || row['quarter'];
-                const cost = parseFloat(row['Cost'] || row['cost'] || 0);
-                const savings = parseFloat(row['Savings'] || row['savings'] || 0);
+                const quarter = row['Quarter'] || row['quarter'] || row[' Quarter'];
+                const cost = parseFloat(row['Cost'] || row['cost'] || row[' Cost'] || 0);
+                const savings = parseFloat(row['Savings'] || row['savings'] || row[' Savings'] || 0);
                 
                 grouped[decision].quarters.push(quarter);
                 grouped[decision].costs.push(cost);
@@ -632,8 +577,14 @@
             decisionData = Object.values(grouped);
             decisionData.sort((a, b) => a.id - b.id);
             
+            console.log('Processed', decisionData.length, 'unique decisions');
+            if (decisionData.length > 0) {
+                console.log('Sample decision:', decisionData[0]);
+            }
+            
+            const statusText = isTestData ? ' (Test Data)' : '';
             document.getElementById('decisionDropdown').innerHTML = 
-                '<span class="status-indicator loaded"></span>' + decisionData.length + ' Decisions Loaded';
+                '<span class="status-indicator loaded"></span>' + decisionData.length + ' Decisions Loaded' + statusText;
         }
         
         function updateDecisionDropdown() {
@@ -1077,6 +1028,82 @@
                 `;
                 legend.appendChild(div);
             });
+        }
+        
+        function loadDummyData() {
+            // Generate dummy data for testing
+            const dummyCSV = generateDummyCSV();
+            parseAndLoadData(dummyCSV, true);  // Pass true to indicate test data
+            
+            // Auto-select first 3 decisions for demo
+            setTimeout(() => {
+                const firstThree = decisionData.slice(0, 3);
+                firstThree.forEach((decision, index) => {
+                    selectedDecisions.add(decision.name);
+                    const checkbox = document.getElementById(`decision-${index}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+                updateSelectAll();
+                updateDisplay();
+            }, 100);
+        }
+        
+        function generateDummyCSV() {
+            const decisions = [
+                { id: 1, name: "Cloud Migration", description: "Migrate infrastructure to cloud services for scalability" },
+                { id: 2, name: "Process Automation", description: "Automate manual processes using RPA technology" },
+                { id: 3, name: "Data Analytics Platform", description: "Implement advanced analytics for better insights" },
+                { id: 4, name: "Security Enhancement", description: "Upgrade cybersecurity infrastructure and protocols" },
+                { id: 5, name: "Customer Portal", description: "Develop self-service customer portal to reduce support costs" },
+                { id: 6, name: "Supply Chain Optimization", description: "Optimize supply chain with AI-driven forecasting" },
+                { id: 7, name: "Remote Work Infrastructure", description: "Enhance remote work capabilities and tools" },
+                { id: 8, name: "Green Energy Initiative", description: "Transition to renewable energy sources" },
+                { id: 9, name: "Training Program", description: "Comprehensive employee skill development program" },
+                { id: 10, name: "ERP System Upgrade", description: "Modernize enterprise resource planning system" }
+            ];
+            
+            const quarters = ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"];
+            
+            let csvRows = ["DecisionID,Decision,Description,Quarter,Cost,Savings,NPV"];
+            
+            decisions.forEach(decision => {
+                let allCosts = [];
+                let allSavings = [];
+                
+                // First, generate all quarters data
+                quarters.forEach((quarter, qIndex) => {
+                    let cost, savings;
+                    
+                    if (qIndex === 0) {
+                        // Higher initial costs
+                        cost = Math.floor(Math.random() * 150 + 100); // 100-250k
+                        savings = Math.floor(Math.random() * 50 + 20); // 20-70k
+                    } else if (qIndex === 1) {
+                        // Moderate costs, increasing savings
+                        cost = Math.floor(Math.random() * 100 + 50); // 50-150k
+                        savings = Math.floor(Math.random() * 100 + 50); // 50-150k
+                    } else {
+                        // Lower costs, higher savings
+                        cost = Math.floor(Math.random() * 50 + 20); // 20-70k
+                        savings = Math.floor(Math.random() * 150 + 100); // 100-250k
+                    }
+                    
+                    allCosts.push(cost);
+                    allSavings.push(savings);
+                });
+                
+                // Calculate NPV (simplified - just total savings minus total costs)
+                const totalCosts = allCosts.reduce((a, b) => a + b, 0);
+                const totalSavings = allSavings.reduce((a, b) => a + b, 0);
+                const npv = totalSavings - totalCosts;
+                
+                // Now create the CSV rows with the same NPV for all quarters of a decision
+                quarters.forEach((quarter, qIndex) => {
+                    csvRows.push(`${decision.id},${decision.name},"${decision.description}",${quarter},${allCosts[qIndex]},${allSavings[qIndex]},${npv}`);
+                });
+            });
+            
+            return csvRows.join('\n');
         }
     </script>
 </body>
