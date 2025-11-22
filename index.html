@@ -644,15 +644,19 @@
                     return;
                 }
                 
-                if (!grouped[decision]) {
-                    grouped[decision] = {
-                        id: parseInt(decisionId) || 0,
-                        name: decision.trim ? decision.trim() : decision,
-                        description: (row['Description'] || row['description'] || row[' Description'] || '').trim ? (row['Description'] || row['description'] || '').trim() : '',
-                        quarters: [],
-                        costs: [],
-                        savings: []
-                    };
+                    if (!grouped[decision]) {
+                        // Preserve the raw DecisionID string (supports values like "AOM-01")
+                        const idRaw = decisionId !== undefined && decisionId !== null ? String(decisionId).trim() : '';
+                        grouped[decision] = {
+                            // `id` is the display ID (string). We keep the original raw value so
+                            // UI shows the human-friendly ID. Numeric sorting is handled separately.
+                            id: idRaw,
+                            name: decision.trim ? decision.trim() : decision,
+                            description: (row['Description'] || row['description'] || row[' Description'] || '').trim ? (row['Description'] || row['description'] || '').trim() : '',
+                            quarters: [],
+                            costs: [],
+                            savings: []
+                        };
                 }
                 
                 const quarter = row['Quarter'] || row['quarter'] || row[' Quarter'];
@@ -665,7 +669,17 @@
             });
             
             decisionData = Object.values(grouped);
-            decisionData.sort((a, b) => a.id - b.id);
+                // Sort: if both IDs are numeric, sort numerically. Otherwise sort by ID string.
+                decisionData.sort((a, b) => {
+                    const aNum = parseInt(a.id);
+                    const bNum = parseInt(b.id);
+                    const aIsNum = !isNaN(aNum);
+                    const bIsNum = !isNaN(bNum);
+                    if (aIsNum && bIsNum) return aNum - bNum;
+                    if (aIsNum && !bIsNum) return -1;
+                    if (!aIsNum && bIsNum) return 1;
+                    return String(a.id).localeCompare(String(b.id));
+                });
             
             console.log('Processed', decisionData.length, 'unique decisions');
             if (decisionData.length > 0) {
