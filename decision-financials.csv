@@ -1,23 +1,12 @@
-﻿DecisionID,Decision,Description,Quarter,Cost,Savings,NPV
-1,Soda data observability,Cloud infrastructure migration to reduce operational costs,Q1 2024,2.5,12,15.8
-1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q2 2024,3.2,1.5,15.8
-1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q3 2024,2.8,4.2,15.8
-1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q4 2024,1.5,6.5,15.8
-1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q1 2025,0.8,7.2,15.8
-1,Example Decision Alpha,Cloud infrastructure migration to reduce operational costs,Q2 2025,0.5,7.8,15.8
-2,Example Decision Beta,Implementation of automated analytics platform,Q1 2024,5,0,22.3
-2,Example Decision Beta,Implementation of automated analytics platform,Q2 2024,4.5,2,22.3
-2,Example Decision Beta,Implementation of automated analytics platform,Q3 2024,3,5.5,22.3
-2,Example Decision Beta,Implementation of automated analytics platform,Q4 2024,2,8,22.3
-2,Example Decision Beta,Implementation of automated analytics platform,Q1 2025,1,9.5,22.3
-2,Example Decision Beta,Implementation of automated analytics platform,Q2 2025,0.5,10.2,22.3
-3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q1 2024,1.8,0,18.5
-3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q2 2024,2.2,3,18.5
-3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q3 2024,1.5,4.8,18.5
-3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q4 2024,0.8,6.2,18.5
-3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q1 2025,0.3,7,18.5
-3,Example Decision Gamma,Customer experience optimization through AI chatbot,Q2 2025,0.2,7.5,18.5
-4,Your Decision Name Here,Your decision description here,Q1 2024,0,0,0
-4,Your Decision Name Here,Your decision description here,Q2 2024,0,0,0
-4,Your Decision Name Here,Your decision description here,Q3 2024,0,0,0
-4,Your Decision Name Here,Your decision description here,Q4 2024,0,0,0
+DecisionID,Decision,Description,Q1_2024_Cost,Q1_2024_Savings,Q2_2024_Cost,Q2_2024_Savings,Q3_2024_Cost,Q3_2024_Savings,Q4_2024_Cost,Q4_2024_Savings
+AOM-01,Implement Brambles moratorium on new analytics tools without prior approval,No new (in-scope) analytics tools are to be procured (across Brambles) without approval from Head of Global D&A + TS (who?),150,30,80,70,40,120,20,130
+AOM-04,Designate Github Copilot as the exclusive pair coding assistant for D&A software development,a) Agree Github Copilot as preferred D&A tool b) qualifying D&A roles &  access approval c) policies for use alongside VS Code & DBX Assistant d) blacklisting of alternative coding assistants ,120,25,60,90,30,110,20,115
+AOM-03,Migrate all Data Science data storage off local machines into cloud environments,"To improve our data security, and make ""hidden"" compute loads visible, reconfigure all DS team members tool compute usage and data storage on to cloud-hosted platforms ",100,20,50,80,25,95,15,100
+AOM-07,Implement a consumption-based tool recharge mechanism from Global D&A to regions,"To support future tool migration work, and to avoid blockers arising from Digital D&A budget limitations, agree a recharge mechanism with Finance and the regions so that analytics tool costs can be re-allocated in proportion to regions' usage. Re-use our existing FinOps processes and teams for this.",150,30,80,70,40,120,20,130
+AOM-05,Designate Soda as the Brambles-wide data observability tool & activate onboarding processes,a) make the Soda tool available to all D&A teams b) promote awareness c) agree recharge mechanism (consumption-based) d) retire Evidently and GE tools,120,25,60,90,30,110,20,115
+AOM-09,Migrate AMERICAS SQL server workloads to Databricks,"Migrate high priority analytics AMERICAS analytics workloads to Databricks from SQL SSIS & SSMS tools. This will produce a more integrated experience for analytic producers, better quaity products, and opex savings from legacy tool retirement",100,20,50,80,25,95,15,100
+AOM-02,Evaluate Alteryx vs Dataiku as the designated low-code data science tool for Global Finance Control team,"Proceed with evaluation, using the existing Finance Alteryx community and their existing use cases as real-world context for comparison. ",150,30,80,70,40,120,20,130
+AOM-06,Select & procure a designated graph database product for Brambles,"a) We need a mandated enterprise-wide graph database tool b) implement selection, procurement & onboarding",120,25,60,90,30,110,20,115
+AOM-08,Onboard AMERICAS D&A team to the Databricks platform,"Databricks access provided to AMERICAS data scientists, engineers, analysts, BI developers. Existing LATAM, NA, and CAN workspaces, compute resources & data catalogs consolidated into a unified AMERICAS collection. Learning needs assessment conducted by Databricks & customised training plan designed.",100,20,50,80,25,95,15,100
+AOM-10,Designate A2A & MCP as the default protocols for agentic AI across Brambles,"Immediate adoption of two complementary open standards: Agent-to-Agent Protocol (A2A) and Model Context Protocol (MCP) as our enterprise foundation for agent-agent and agent-tool interworking. The alternative, fragmented proprietary solutions or no standards, risks creating expensive technical debt, vendor lock-in, and inability to participate in the emerging AI agent ecosystem.",150,30,80,70,40,120,20,130
+AOM-11,Adjust scope & terms of the D&A Solution Review Board (SRB) and re-launch,Adjust scope & terms of the D&A Solution Review Board (SRB) and re-launch,120,25,60,90,30,110,20,115
