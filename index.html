@@ -432,13 +432,7 @@
                     </div>
                 </div>
                 
-                <div class="control-group active-decisions-group" id="activeDecisionsGroup" style="gap: 3px;">
-                    <span class="control-label" style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                        All Decisions
-                        <span style="font-size: 10px; color: #001C66; background: #f1f5f9; padding: 1px 6px; border-radius: 8px; font-weight: 600;" id="decisionCount">0 selected</span>
-                    </span>
-                    <div id="selectedDecisionsList" style="display: flex; flex-wrap: wrap; gap: 4px; margin-left: 0; padding-left: 0;"></div>
-                </div>
+                
             </div>
         </div>
         
@@ -447,8 +441,18 @@
             <div class="chart-wrapper" id="waterfallChart"></div>
             <div class="legend" id="legend"></div>
         </div>
+
+        <div class="dashboard-header" style="margin-top: 12px; padding: 10px 18px;">
+            <div class="control-group active-decisions-group" id="activeDecisionsGroup" style="gap: 6px;">
+                <span class="control-label" style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                    All Decisions
+                    <span style="font-size: 10px; color: #001C66; background: #f1f5f9; padding: 1px 6px; border-radius: 8px; font-weight: 600;" id="decisionCount">0 selected</span>
+                </span>
+                <div id="selectedDecisionsList" style="display: flex; flex-wrap: wrap; gap: 4px; margin-left: 0; padding-left: 0;"></div>
+            </div>
+        </div>
     </div>
-    
+
     <div class="tooltip" id="tooltip"></div>
     
     <script>
