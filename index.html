@@ -699,7 +699,30 @@
                             // first row sample omitted for cleaner console output
                             processData(rows, isTestData);
                             updateDecisionDropdown();
-                            updateDisplay();
+
+                            // Default: select all decisions so the waterfall shows all contributions
+                            if (decisionData && decisionData.length > 0) {
+                                // Add every decision to the selected set
+                                decisionData.forEach(d => selectedDecisions.add(d.name));
+
+                                // Check all per-decision checkboxes in the menu
+                                const checkboxes = document.querySelectorAll('#decisionMenu input[type="checkbox"]:not(#selectAll)');
+                                checkboxes.forEach(cb => cb.checked = true);
+
+                                // Ensure the Select All checkbox reflects the state
+                                const selectAllCheckbox = document.getElementById('selectAll');
+                                if (selectAllCheckbox) {
+                                    selectAllCheckbox.checked = true;
+                                    selectAllCheckbox.indeterminate = false;
+                                }
+
+                                // Refresh UI to show the selection and recompute metrics/chart
+                                updateSelectAll();
+                                updateDecisionButton(isTestData);
+                                updateDisplay();
+                            } else {
+                                updateDisplay();
+                            }
                         } else {
                             console.error('No data found in CSV');
                             document.getElementById('decisionDropdown').innerHTML = 
@@ -1324,18 +1347,6 @@
             // Generate dummy data for testing
             const dummyCSV = generateDummyCSV();
             parseAndLoadData(dummyCSV, true);  // Pass true to indicate test data
-            
-            // Auto-select first 3 decisions for demo
-            setTimeout(() => {
-                const firstThree = decisionData.slice(0, 3);
-                firstThree.forEach((decision, index) => {
-                    selectedDecisions.add(decision.name);
-                    const checkbox = document.getElementById(`decision-${index}`);
-                    if (checkbox) checkbox.checked = true;
-                });
-                updateSelectAll();
-                updateDisplay();
-            }, 100);
         }
         
         function generateDummyCSV() {
