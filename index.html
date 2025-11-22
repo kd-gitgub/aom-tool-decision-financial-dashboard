@@ -1289,15 +1289,19 @@
             });
 
             // Draw horizontal grid lines matching the vertical midline style
-            // Use y axis ticks to position the horizontal guides
+            // Use y axis ticks to position the horizontal guides.
+            // Skip the bottom-most tick (baseline) so there's no faint line at the chart bottom.
             const yTicks = y.ticks ? y.ticks() : [];
             yTicks.forEach(tick => {
+                const yPos = y(tick);
+                // if yPos is at or very near the bottom of the plotting area, skip it
+                if (Math.abs(yPos - height) < 1) return;
                 g.append('line')
                     .attr('class', 'quarter-midline')
                     .attr('x1', 0)
                     .attr('x2', width)
-                    .attr('y1', y(tick))
-                    .attr('y2', y(tick));
+                    .attr('y1', yPos)
+                    .attr('y2', yPos);
             });
 
             // Quarter background shading removed to avoid visual variation
@@ -1379,22 +1383,10 @@
                     .style("fill", "#001C66")
                     .text(boundary.quarter);
                 
-                xAxis.append("line")
-                    .attr("x1", centerX)
-                    .attr("x2", centerX)
-                    .attr("y1", 0)
-                    .attr("y2", 6)
-                    .attr("stroke", "#001C66")
-                    .attr("stroke-width", 1);
+                // small tick marker removed to match continuous line chart (only labels shown)
             });
             
-            xAxis.append("line")
-                .attr("x1", 0)
-                .attr("x2", width)
-                .attr("y1", 0)
-                .attr("y2", 0)
-                .attr("stroke", "#001C66")
-                .attr("stroke-width", 1);
+            // removed solid x-axis line per design — only labels are shown
             
             // Y-axis
             const yAxis = d3.axisLeft(y)
@@ -1586,17 +1578,17 @@
                 .attr("r", 4)
                 .attr("fill", "#8F29FC");
 
-            // x labels
-            series.forEach((d,i) => {
-                g.append("text")
-                  .attr("x", x(i))
-                  .attr("y", height + 25)
-                  .attr("text-anchor", "middle")
-                  .text(d.quarter)
-                  .style("font-size","12px")
-                  .style("font-weight","600")
-                  .style("fill","#001C66");
-            });
+                        // x labels (unified font-size to match waterfall view)
+                        series.forEach((d,i) => {
+                                g.append("text")
+                                    .attr("x", x(i))
+                                    .attr("y", height + 25)
+                                    .attr("text-anchor", "middle")
+                                    .text(d.quarter)
+                                    .style("font-size","14px")
+                                    .style("font-weight","600")
+                                    .style("fill","#001C66");
+                        });
 
             const yAxis = d3.axisLeft(y).tickFormat(v => `$${formatNumber(v)}k`);
             g.append("g")
