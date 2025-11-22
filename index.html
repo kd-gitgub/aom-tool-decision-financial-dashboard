@@ -96,7 +96,8 @@
         
         .dropdown-container {
             position: relative;
-            min-width: 250px;
+            /* increase base min-width so the dropdown button and menu have more room */
+            min-width: 320px;
         }
         
         .dropdown-button {
@@ -159,7 +160,7 @@
             top: 100%;
             left: 0;
             /* make the menu wider so decision names fit on one line on desktop */
-            min-width: 920px;
+            min-width: 1120px;
             /* keep the menu within viewport with a small page gutter */
             max-width: calc(100vw - 80px);
             background: white;
@@ -202,6 +203,7 @@
         /* Ensure all non-header dropdown row text uses the same font size */
         .dropdown-item .decision-id,
         .dropdown-item .npv-badge,
+        .dropdown-item .confidence-badge,
         .dropdown-item .decision-name {
             font-size: 13px;
             line-height: 1.2;
@@ -238,11 +240,18 @@
         /* Ensure each header column uses the same font size, color and opacity */
         .dropdown-header .decision-id,
         .dropdown-header .npv-badge,
+        .dropdown-header .confidence-badge,
         .dropdown-header .decision-name {
             font-size: 13px;
             color: #001C66;
             opacity: 0.9;
             font-weight: 600;
+        }
+
+        /* Make header decision name participate in flex layout like row names so edges align */
+        .dropdown-header .decision-name {
+            flex: 1 1 auto;
+            min-width: 0;
         }
 
         /* Make the header checkbox spacer match the actual checkbox width used in rows */
@@ -261,6 +270,14 @@
         .dropdown-item .npv-badge {
             color: #001C66;
             font-weight: 600;
+        }
+
+        .confidence-badge {
+            color: #6b7280;
+            font-weight: 600;
+            min-width: 80px; /* increased width to better fit percentages */
+            text-align: center;
+            display: inline-block;
         }
         
         .dropdown-item input[type="checkbox"] {
@@ -564,6 +581,7 @@
                                 <span class="checkbox-spacer"></span>
                                 <span class="decision-id">ID</span>
                                 <span class="npv-badge">NPV</span>
+                                <span class="confidence-badge">Confidence</span>
                                 <span class="decision-name">Decision</span>
                             </div>
                         </div>
@@ -791,9 +809,10 @@
                                             DecisionID: decisionId,
                                             Decision: decision,
                                             Description: description,
-                                            Quarter: quarter,
-                                            Cost: cost,
-                                            Savings: savings
+                                                    Confidence: r['Confidence'] || r['confidence'] || r[' Confidence'] || r['Confidence '] || null,
+                                                    Quarter: quarter,
+                                                    Cost: cost,
+                                                    Savings: savings
                                         });
                                     });
                                 });
@@ -868,6 +887,7 @@
                             id: idRaw,
                             name: decision.trim ? decision.trim() : decision,
                             description: (row['Description'] || row['description'] || row[' Description'] || '').trim ? (row['Description'] || row['description'] || '').trim() : '',
+                            confidence: null,
                             quarters: [],
                             costs: [],
                             savings: []
@@ -881,6 +901,15 @@
                 grouped[decision].quarters.push(quarter);
                 grouped[decision].costs.push(cost);
                 grouped[decision].savings.push(savings);
+                // Capture Confidence (first non-empty value for this decision)
+                if ((grouped[decision].confidence === null || grouped[decision].confidence === undefined) ) {
+                    const confRaw = row['Confidence'] || row['confidence'] || row[' Confidence'] || row['Confidence '] || null;
+                    if (confRaw !== null && confRaw !== undefined) {
+                        const confStr = String(confRaw).replace('%','').trim();
+                        const confNum = parseInt(confStr, 10);
+                        if (!isNaN(confNum)) grouped[decision].confidence = confNum;
+                    }
+                }
             });
             
             decisionData = Object.values(grouped);
@@ -947,6 +976,7 @@
                     const npvSign = npvVal >= 0 ? '' : '-';
                     const npvColor = npvVal >= 0 ? '#10b981' : '#ef4444';
                     const npvText = `<span class="npv-badge">${npvSign}$${formatNumber(Math.round(Math.abs(npvVal)))}k</span>`;
+                    const confText = (typeof decision.confidence === 'number' && !isNaN(decision.confidence)) ? `<span class="confidence-badge">${Math.round(decision.confidence)}%</span>` : `<span class="confidence-badge"></span>`;
 
                     // Render item without the description line to keep the dropdown concise
                     item.innerHTML = `
@@ -954,6 +984,7 @@
                             <input type="checkbox" id="decision-${index}" data-decision="${decision.name}">
                             <span class="decision-id">${decision.id}</span>
                             ${npvText}
+                            ${confText}
                             <span class="decision-name">${decision.name}</span>
                         </label>
                     `;
