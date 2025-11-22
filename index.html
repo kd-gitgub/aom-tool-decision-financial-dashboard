@@ -595,6 +595,13 @@
                         <button class="view-option" data-view="detailed">Decisions</button>
                     </div>
                 </div>
+                        <div class="control-group" style="gap: 4px;">
+                            <span class="control-label">NPV Confidence Weights</span>
+                            <div class="view-toggle" id="confidenceToggle">
+                                <button class="view-option active" data-state="off">OFF</button>
+                                <button class="view-option" data-state="on">APPLIED</button>
+                            </div>
+                        </div>
                 
                 
             </div>
@@ -615,6 +622,7 @@
         let decisionData = [];
         let selectedDecisions = new Set();
         let currentView = 'aggregated';
+        let confidenceWeightsOn = false; // whether to apply per-decision confidence weighting to NPV
         let currentQuarter = 'all';
         
         // Color scheme
@@ -947,17 +955,27 @@
                     return String(a.quarter).localeCompare(String(b.quarter));
                 });
 
-                // Compute discounted NPV: sum_{t=0..} (savings_t - cost_t) / (1+WACC)^t
-                let npv = 0;
-                for (let t = 0; t < entries.length; t++) {
-                    const cf = (entries[t].savings || 0) - (entries[t].cost || 0);
-                    npv += cf / Math.pow(1 + WACC, t);
-                }
-                d.npv = npv;
+                    // Compute discounted NPV: sum_{t=0..} (savings_t - cost_t) / (1+WACC)^t
+                    let npv = 0;
+                    for (let t = 0; t < entries.length; t++) {
+                        const cf = (entries[t].savings || 0) - (entries[t].cost || 0);
+                        npv += cf / Math.pow(1 + WACC, t);
+                    }
+                    // store raw unweighted NPV so we can toggle confidence-weighting without recomputing cashflows
+                    d.rawNpv = npv;
+                    // apply confidence weighting immediately if the toggle is active, otherwise use raw
+                    if (confidenceWeightsOn && typeof d.confidence === 'number' && !isNaN(d.confidence)) {
+                        d.npv = d.rawNpv * (d.confidence / 100);
+                    } else {
+                        d.npv = d.rawNpv;
+                    }
             });
             
                 // Update the dropdown button to show selected count (initially zero)
                 updateDecisionButton(isTestData);
+                // Ensure the displayed NPV reflects the confidence-weighting state
+                // (useful if data loads after the toggle state is changed)
+                applyConfidenceWeights();
         }
         
         function updateDecisionDropdown() {
@@ -1074,9 +1092,11 @@
             btn.innerHTML = '<span class="status-indicator loaded"></span>' + selectedCount + ' Selected' + statusText;
         }
         
-        document.querySelectorAll('.view-option').forEach(btn => {
+        // Only bind view buttons inside the primary view-toggle (exclude the confidence toggle)
+        document.querySelectorAll('.view-toggle:not(#confidenceToggle) .view-option').forEach(btn => {
             btn.addEventListener('click', function() {
-                document.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
+                const group = this.closest('.view-toggle');
+                if (group) group.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 currentView = this.dataset.view;
                 // Update chart title depending on view
@@ -1087,6 +1107,21 @@
                 updateDisplay();
             });
         });
+
+        // Bind the NPV Confidence Weights toggle (ON/OFF)
+        const confToggle = document.getElementById('confidenceToggle');
+        if (confToggle) {
+            confToggle.querySelectorAll('.view-option').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    confToggle.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    const state = this.dataset.state;
+                    confidenceWeightsOn = (state === 'on');
+                    applyConfidenceWeights();
+                    updateDisplay();
+                });
+            });
+        }
         
         function updateDisplay() {
             const selectedData = decisionData.filter(d => selectedDecisions.has(d.name));
@@ -1164,6 +1199,20 @@
             document.getElementById('totalCosts').textContent = '$' + formatNumber(totalCosts);
             document.getElementById('totalSavings').textContent = '$' + formatNumber(totalSavings);
             document.getElementById('netBenefit').textContent = '$' + formatNumber(totalSavings - totalCosts);
+        }
+
+        // Apply or remove confidence weighting to the per-decision NPV values.
+        // If a decision has no numeric confidence, its rawNpv will be used unchanged.
+        function applyConfidenceWeights() {
+            if (!Array.isArray(decisionData)) return;
+            decisionData.forEach(d => {
+                if (typeof d.rawNpv !== 'number') d.rawNpv = (typeof d.npv === 'number' ? d.npv : 0);
+                if (confidenceWeightsOn && typeof d.confidence === 'number' && !isNaN(d.confidence)) {
+                    d.npv = d.rawNpv * (d.confidence / 100);
+                } else {
+                    d.npv = d.rawNpv;
+                }
+            });
         }
         
         function processWaterfallData(data) {
