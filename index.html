@@ -12,13 +12,23 @@
             padding: 0;
             box-sizing: border-box;
         }
+        :root {
+            --blue: #001C66;
+            --accent: #0079FF;
+            --accent-dark: #001CAD;
+            --purple: #8F29FC;
+            --green: #10b981;
+            --muted: #e2e8f0;
+            --bg: #001C66;
+            --body-text-light: #E6EEF8;
+        }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3a6f 0%, #2c5282 100%);
+            background: var(--bg);
             min-height: 100vh;
-            padding: 15px;
-            color: #001C66;
+            padding: 20px;
+            color: var(--body-text-light);
         }
         
         .dashboard-container {
@@ -27,17 +37,26 @@
         }
         
         .dashboard-header {
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 12px;
-            padding: 16px 24px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
         }
         
         .dashboard-title {
-            color: #001C66;
-            font-size: 24px;
+            color: var(--blue);
+            font-size: 2em;
             font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-subtitle {
+            color: var(--blue);
+            margin-bottom: 18px;
+            font-size: 0.95em;
+            font-weight: 400;
+            opacity: 0.95;
         }
         
         .controls-row {
@@ -82,13 +101,13 @@
         
         .dropdown-button {
             width: 100%;
-            padding: 8px 32px 8px 10px;
+            padding: 8px 16px;
             background: white;
-            border: 2px solid #e2e8f0;
+            border: 1px solid var(--accent-dark);
             border-radius: 8px;
             cursor: pointer;
-            font-size: 13px;
-            color: #001C66;
+            font-size: 0.9em;
+            color: var(--blue);
             text-align: left;
             position: relative;
             transition: all 0.2s;
@@ -254,19 +273,19 @@
         
         .view-toggle {
             display: flex;
-            background: #f1f5f9;
-            border-radius: 6px;
+            background: var(--muted);
+            border-radius: 8px;
             padding: 3px;
         }
         
         .view-option {
-            padding: 6px 12px;
+            padding: 6px 16px;
             border: none;
             background: transparent;
-            color: #001C66;
+            color: var(--blue);
             cursor: pointer;
-            border-radius: 4px;
-            font-size: 13px;
+            border-radius: 5px;
+            font-size: 0.9em;
             font-weight: 500;
             transition: all 0.2s;
         }
@@ -297,18 +316,18 @@
         }
         
         .metric-card {
-            background: white;
-            border-radius: 6px;
-            padding: 12px 16px;
+            background: #f8fafc; /* match style ideas subtle gray */
+            border-radius: 12px;
+            padding: 20px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
             position: relative;
             min-height: 60px;
-            border-left: 6px solid #001c66;
+            border-left: 7px solid var(--green); /* default left border; inline styles may override */
         }
         
         .metric-label {
-            color: #001c66;
-            font-size: 0.8em;
+            color: var(--blue);
+            font-size: 0.9em;
             text-transform: none;
             letter-spacing: 0.5px;
             font-weight: 400;
@@ -317,8 +336,8 @@
         }
         
         .metric-value {
-            color: #001C66;
-            font-size: 24px;
+            color: var(--blue);
+            font-size: 2em;
             font-weight: 700;
             display: flex;
             align-items: baseline;
@@ -473,6 +492,13 @@
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
         }
 
+        /* Slightly stronger card hover to match style ideas */
+        .decision-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-color: var(--accent);
+        }
+
         /* Hide the legend area below the chart (both views) */
         #legend {
             display: none !important;
@@ -483,8 +509,9 @@
     <div class="dashboard-container">
         <div class="dashboard-header">
             <h1 class="dashboard-title" style="margin-bottom: 12px;">AOM Tooling Investment Profile</h1>
-            
-            <div class="metrics-row" style="margin-bottom: 0; background: rgba(248, 250, 252, 0.5); padding: 8px; border-radius: 6px;">
+            <div class="dashboard-subtitle">Individual decision contributions</div>
+
+            <div class="metrics-row" style="margin-bottom: 0;">
                 <div class="metric-card">
                     <div class="metric-value">
                         <span id="totalNPV">$0</span>
@@ -945,12 +972,42 @@
         }
         
         document.getElementById('decisionDropdown').addEventListener('click', function() {
-            document.getElementById('decisionMenu').classList.toggle('show');
+            const menu = document.getElementById('decisionMenu');
+            if (!menu) return;
+            menu.classList.toggle('show');
+            const isOpen = menu.classList.contains('show');
+            this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (isOpen) {
+                // move focus into the menu for better keyboard UX
+                const firstCheckbox = menu.querySelector('input[type="checkbox"]');
+                if (firstCheckbox) firstCheckbox.focus();
+            }
         });
-        
+
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.dropdown-container')) {
-                document.getElementById('decisionMenu').classList.remove('show');
+                const menu = document.getElementById('decisionMenu');
+                if (menu) menu.classList.remove('show');
+                const btn = document.getElementById('decisionDropdown');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close the decision dropdown when the user presses Escape.
+        // Scoped to this menu so it doesn't interfere with other modals.
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                const menu = document.getElementById('decisionMenu');
+                const btn = document.getElementById('decisionDropdown');
+                if (menu && menu.classList.contains('show')) {
+                    menu.classList.remove('show');
+                    if (btn) {
+                        btn.setAttribute('aria-expanded', 'false');
+                        btn.focus();
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
             }
         });
         
