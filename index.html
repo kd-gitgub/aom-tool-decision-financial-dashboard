@@ -516,35 +516,33 @@
         }
         
         function attemptAutoLoad() {
-            console.log('Attempting to load decision-financials.csv...');
+            
             
             // Try the expected filename first
             // Add a cache-busting timestamp so the browser always fetches the latest CSV
             const csvUrlPrimary = 'decision-financials.csv?t=' + Date.now();
             fetch(csvUrlPrimary)
                 .then(response => {
-                    console.log('CSV fetch response:', response.status, response.statusText);
+                    
                     if (!response.ok) {
                         throw new Error(`CSV not found (status: ${response.status})`);
                     }
                     return response.text();
                 })
                 .then(csvText => {
-                    console.log('CSV loaded successfully, length:', csvText.length);
-                    console.log('CSV header (first line):', csvText.split('\n')[0]);
-                    console.log('First 200 characters:', csvText.substring(0, 200));
+                    // CSV loaded successfully
                     parseAndLoadData(csvText, false);
                 })
                 .catch(error => {
                     console.error('Primary CSV load failed:', error);
                     
                     // Try alternative filename without hyphen
-                    console.log('Trying alternative: decisionfinancials.csv...');
+                    
                     const csvUrlAlt = 'decisionfinancials.csv?t=' + Date.now();
                     return fetch(csvUrlAlt)
                         .then(response => {
                             if (!response.ok) throw new Error('Alternative also not found');
-                            console.log('Alternative CSV found!');
+                            
                             return response.text();
                         })
                         .then(csvText => {
@@ -557,7 +555,7 @@
                             
                             // Fallback to dummy data for testing
                             setTimeout(() => {
-                                console.log('Loading dummy data as fallback');
+                                
                                 loadDummyData();
                             }, 500);
                         });
@@ -565,13 +563,13 @@
         }
         
         function parseAndLoadData(csvText, isTestData = false) {
-            console.log('Parsing CSV data...');
+            
             Papa.parse(csvText, {
                 header: true,
                 dynamicTyping: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                        console.log('Parse complete. Rows found:', results.data.length);
+                        
                         // Support both long and wide CSV formats. If the CSV is "wide"
                         // (one row per decision with Cost/Savings columns per quarter)
                         // convert it to the long format the dashboard expects.
@@ -583,7 +581,7 @@
                             const hasCostOrSavings = keys.some(k => /cost|saving/i.test(k));
 
                             if (!hasQuarter && hasCostOrSavings) {
-                                console.log('Detected wide CSV format - converting to long format');
+                                
 
                                 // Identify quarter prefixes by stripping trailing Cost/Savings
                                 const prefixes = new Set();
@@ -658,11 +656,10 @@
                                     });
                                 });
 
-                                console.log('Converted wide CSV to', longRows.length, 'rows');
                                 rows = longRows;
                             }
 
-                            console.log('First row sample:', rows[0]);
+                            // first row sample omitted for cleaner console output
                             processData(rows, isTestData);
                             updateDecisionDropdown();
                             updateDisplay();
@@ -680,11 +677,11 @@
         
         function processData(rawData, isTestData = false) {
             const grouped = {};
-            console.log('Processing', rawData.length, 'rows of data');
+            
             
             // Log column names to debug potential header issues
             if (rawData.length > 0) {
-                console.log('Column names found:', Object.keys(rawData[0]));
+                
             }
             
             rawData.forEach((row, index) => {
@@ -693,7 +690,7 @@
                 const decisionId = row['DecisionID'] || row['decisionid'] || row['DecisionId'] || row[' DecisionID'] || row['DecisionID '];
                 
                 if (!decision) {
-                    console.log(`Row ${index} skipped - no Decision field found. Row data:`, row);
+                    
                     return;
                 }
                 
@@ -734,9 +731,9 @@
                     return String(a.id).localeCompare(String(b.id));
                 });
             
-            console.log('Processed', decisionData.length, 'unique decisions');
+            
             if (decisionData.length > 0) {
-                console.log('Sample decision:', decisionData[0]);
+                
             }
 
             // Compute discounted NPV per decision using WACC
@@ -780,14 +777,24 @@
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
                 item.title = decision.description;
-                item.innerHTML = `
-                    <input type="checkbox" id="decision-${index}" data-decision="${decision.name}">
-                    <label for="decision-${index}" style="flex: 1; cursor: pointer;">
-                        <span style="font-weight: 600; color: #001C66;">${decision.id}.</span>
-                        ${decision.name}
-                        ${decision.description ? `<div style="font-size: 11px; color: #001C66; opacity: 0.7; margin-top: 2px;">${decision.description.substring(0, 50)}${decision.description.length > 50 ? '...' : ''}</div>` : ''}
-                    </label>
-                `;
+                                // Build per-decision NPV display
+                                const npvVal = typeof decision.npv === 'number' ? decision.npv : 0;
+                                const npvSign = npvVal >= 0 ? '' : '-';
+                                const npvColor = npvVal >= 0 ? '#10b981' : '#ef4444';
+                                const npvText = `<span style="font-weight:700; margin-left:8px; color:${npvColor};">${npvSign}$${formatNumber(Math.round(Math.abs(npvVal)))}k</span>`;
+
+                                item.innerHTML = `
+                                        <input type="checkbox" id="decision-${index}" data-decision="${decision.name}">
+                                        <label for="decision-${index}" style="flex: 1; cursor: pointer; display:flex; align-items:flex-start; gap:8px;">
+                                                <div style="display:flex; align-items:baseline; gap:8px;">
+                                                    <span style="font-weight: 600; color: #001C66;">${decision.id}.</span>
+                                                    <div style="display:flex; flex-direction:column;">
+                                                        <div style="font-weight:600; color:#001C66;">${decision.name} ${npvText}</div>
+                                                        ${decision.description ? `<div style="font-size: 11px; color: #001C66; opacity: 0.7; margin-top: 2px;">${decision.description.substring(0, 50)}${decision.description.length > 50 ? '...' : ''}</div>` : ''}
+                                                    </div>
+                                                </div>
+                                        </label>
+                                `;
                 menu.appendChild(item);
                 
                 item.querySelector('input').addEventListener('change', function() {
@@ -865,11 +872,17 @@
                     decision.name.substring(0, 25) + '...' : 
                     decision.name;
                 
+                // Per-decision NPV badge
+                const npvVal = typeof decision.npv === 'number' ? decision.npv : 0;
+                const npvColor = npvVal >= 0 ? '#10b981' : '#ef4444';
+                const npvBadge = `<span style="margin-left:8px; font-size:11px; font-weight:700; color:${npvColor};">$${formatNumber(Math.round(Math.abs(npvVal)))}k</span>`;
+
                 return `
                     <div class="decision-chip ${isSelected ? '' : 'inactive'}" 
                          title="${decision.name}${decision.description ? ': ' + decision.description : ''}">
                         <span style="font-weight: 700; margin-right: 2px;">${decision.id}.</span>
                         ${displayName}
+                        ${npvBadge}
                     </div>
                 `;
             }).join('');
@@ -935,7 +948,6 @@
 
             // Build a normalized unique quarter list
             const allQuarters = [...new Set(data.flatMap(d => (d.quarters || []).map(normalizeQ)))].filter(Boolean);
-            console.log('Detected quarter order (normalized):', allQuarters);
 
             // Sort by year then quarter number
             allQuarters.sort((a, b) => {
