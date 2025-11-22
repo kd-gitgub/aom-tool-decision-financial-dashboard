@@ -1,0 +1,4 @@
+DecisionID,Decision,Description,Q1_2024_Cost,Q1_2024_Savings,Q2_2024_Cost,Q2_2024_Savings,Q3_2024_Cost,Q3_2024_Savings,Q4_2024_Cost,Q4_2024_Savings
+1,Cloud Migration,"Migrate infrastructure to cloud services for scalability",150,30,80,70,40,120,20,130
+2,Process Automation,"Automate manual processes using RPA",120,25,60,90,30,110,20,115
+3,Data Analytics Platform,"Implement advanced analytics for better insights",100,20,50,80,25,95,15,100

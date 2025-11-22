@@ -539,17 +539,85 @@
                 dynamicTyping: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    console.log('Parse complete. Rows found:', results.data.length);
-                    if (results.data.length > 0) {
-                        console.log('First row sample:', results.data[0]);
-                        processData(results.data, isTestData);
-                        updateDecisionDropdown();
-                        updateDisplay();
-                    } else {
-                        console.error('No data found in CSV');
-                        document.getElementById('decisionDropdown').innerHTML = 
-                            '<span class="status-indicator empty"></span>No data in CSV';
-                    }
+                        console.log('Parse complete. Rows found:', results.data.length);
+                        // Support both long and wide CSV formats. If the CSV is "wide"
+                        // (one row per decision with Cost/Savings columns per quarter)
+                        // convert it to the long format the dashboard expects.
+                        let rows = results.data;
+
+                        if (rows.length > 0) {
+                            const keys = Object.keys(rows[0]);
+                            const hasQuarter = keys.some(k => /quarter/i.test(k));
+                            const hasCostOrSavings = keys.some(k => /cost|saving/i.test(k));
+
+                            if (!hasQuarter && hasCostOrSavings) {
+                                console.log('Detected wide CSV format - converting to long format');
+
+                                // Identify quarter prefixes by stripping trailing Cost/Savings
+                                const prefixes = new Set();
+                                keys.forEach(k => {
+                                    const m = k.match(/^(.*?)(?:[_\s-]?)(?:Cost|Savings)$/i);
+                                    if (m && m[1]) prefixes.add(m[1]);
+                                });
+
+                                function normalizeQuarterPrefix(pref) {
+                                    if (!pref) return pref;
+                                    let s = String(pref).replace(/[_\-]+/g, ' ').trim();
+                                    // Handle patterns like "Q1 2024", "Q1_2024", "2024_Q1"
+                                    let m = s.match(/Q\s*(\d+)\s*(\d{4})/i);
+                                    if (m) return `Q${m[1]} ${m[2]}`;
+                                    m = s.match(/(\d{4})\s*Q\s*(\d+)/i);
+                                    if (m) return `Q${m[2]} ${m[1]}`;
+                                    m = s.match(/Q(\d+)[ _]?(\d{4})/i);
+                                    if (m) return `Q${m[1]} ${m[2]}`;
+                                    m = s.match(/(\d{4})[ _-]?(\d{1,2})/);
+                                    if (m) return `${m[1]}-${m[2]}`;
+                                    return s;
+                                }
+
+                                const longRows = [];
+                                rows.forEach(r => {
+                                    const decisionId = r['DecisionID'] || r['decisionid'] || r['Decision Id'] || r['DecisionId'] || '';
+                                    const decision = r['Decision'] || r['decision'] || '';
+                                    const description = r['Description'] || r['description'] || '';
+
+                                    prefixes.forEach(pref => {
+                                        const prefLower = String(pref).toLowerCase();
+                                        const costKey = keys.find(k => k.toLowerCase().startsWith(prefLower) && /cost/i.test(k));
+                                        const savingsKey = keys.find(k => k.toLowerCase().startsWith(prefLower) && /saving/i.test(k));
+
+                                        const cost = costKey ? parseFloat(r[costKey]) || 0 : 0;
+                                        const savings = savingsKey ? parseFloat(r[savingsKey]) || 0 : 0;
+
+                                        // If both are zero and both keys are absent, skip
+                                        if (!costKey && !savingsKey) return;
+
+                                        const quarter = normalizeQuarterPrefix(pref);
+
+                                        longRows.push({
+                                            DecisionID: decisionId,
+                                            Decision: decision,
+                                            Description: description,
+                                            Quarter: quarter,
+                                            Cost: cost,
+                                            Savings: savings
+                                        });
+                                    });
+                                });
+
+                                console.log('Converted wide CSV to', longRows.length, 'rows');
+                                rows = longRows;
+                            }
+
+                            console.log('First row sample:', rows[0]);
+                            processData(rows, isTestData);
+                            updateDecisionDropdown();
+                            updateDisplay();
+                        } else {
+                            console.error('No data found in CSV');
+                            document.getElementById('decisionDropdown').innerHTML = 
+                                '<span class="status-indicator empty"></span>No data in CSV';
+                        }
                 },
                 error: function(error) {
                     console.error('Papa Parse error:', error);
