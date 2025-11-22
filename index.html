@@ -121,8 +121,11 @@
         .dropdown-item .decision-name {
             font-weight: 500;
             color: #001C66;
-            white-space: normal;
-            overflow-wrap: anywhere;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1 1 auto;
+            min-width: 0;
         }
 
         .npv-badge {
@@ -176,6 +179,14 @@
             min-height: 36px;
             color: #001C66;
         }
+
+        /* Ensure all non-header dropdown row text uses the same font size */
+        .dropdown-item .decision-id,
+        .dropdown-item .npv-badge,
+        .dropdown-item .decision-name {
+            font-size: 13px;
+            line-height: 1.2;
+        }
         
         .dropdown-item:hover {
             background: #f1f5f9;
@@ -185,6 +196,52 @@
             border-bottom: 2px solid #e2e8f0;
             font-weight: 600;
             align-items: center;
+        }
+
+        /* Slightly darker horizontal divider between each non-header dropdown row */
+        .dropdown-item:not(.dropdown-header):not(.select-all) {
+            border-bottom: 1px solid rgba(14, 20, 30, 0.08);
+        }
+
+        /* Header row for dropdown columns - unified font, color and opacity */
+        .dropdown-header {
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #001C66; /* match top NPV metric text color */
+            font-weight: 600;
+            opacity: 0.9;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        /* Ensure each header column uses the same font size, color and opacity */
+        .dropdown-header .decision-id,
+        .dropdown-header .npv-badge,
+        .dropdown-header .decision-name {
+            font-size: 13px;
+            color: #001C66;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        /* Make the header checkbox spacer match the actual checkbox width used in rows */
+        .dropdown-header .checkbox-spacer {
+            width: 16px;
+            display: inline-block;
+            flex: 0 0 auto;
+        }
+
+        /* Header decision-id should have the same right gap as row decision ids */
+        .dropdown-header .decision-id {
+            margin-right: 8px;
+        }
+
+        /* Make dropdown NPV badges use the same color as the top Total NPV metric */
+        .dropdown-item .npv-badge {
+            color: #001C66;
+            font-weight: 600;
         }
         
         .dropdown-item input[type="checkbox"] {
@@ -302,6 +359,16 @@
             font-weight: 600;
             margin-bottom: 16px;
         }
+
+        /* Vertical midpoint lines between quarter labels */
+        .quarter-midline {
+            stroke: #D3CAD9;
+            stroke-opacity: 0.85;
+            stroke-width: 1;
+            shape-rendering: crispEdges;
+        }
+
+        /* Gridlines removed - charts render without background grid */
         
         .status-indicator {
             display: inline-block;
@@ -405,6 +472,11 @@
             transform: translateY(-1px);
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
         }
+
+        /* Hide the legend area below the chart (both views) */
+        #legend {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -423,26 +495,26 @@
                     </div>
                     <div class="metric-label">Total NPV</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-value">
-                        <span id="totalCosts">$0</span>
-                        <span class="metric-suffix">k</span>
-                    </div>
-                    <div class="metric-label">Total Costs</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">
+                <div class="metric-card" style="border-left: 6px solid #22c55e;">
+                    <div class="metric-value" style="color: #22c55e;">
                         <span id="totalSavings">$0</span>
-                        <span class="metric-suffix">k</span>
+                        <span class="metric-suffix" style="color: #22c55e;">k</span>
                     </div>
-                    <div class="metric-label">Total Savings</div>
+                    <div class="metric-label" style="color: #22c55e;">Total Savings</div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-value">
-                        <span id="netBenefit">$0</span>
-                        <span class="metric-suffix">k</span>
+                <div class="metric-card" style="border-left: 6px solid #ef4444;">
+                    <div class="metric-value" style="color: #ef4444;">
+                        <span id="totalCosts">$0</span>
+                        <span class="metric-suffix" style="color: #ef4444;">k</span>
                     </div>
-                    <div class="metric-label">Net Benefit</div>
+                    <div class="metric-label" style="color: #ef4444;">Total Costs</div>
+                </div>
+                <div class="metric-card" style="border-left: 6px solid #8F29FC;">
+                    <div class="metric-value" style="color: #8F29FC;">
+                        <span id="netBenefit">$0</span>
+                        <span class="metric-suffix" style="color: #8F29FC;">k</span>
+                    </div>
+                    <div class="metric-label" style="color: #8F29FC;">Net Benefit</div>
                 </div>
             </div>
         </div>
@@ -461,6 +533,12 @@
                                 <input type="checkbox" id="selectAll">
                                 <label for="selectAll">Select All</label>
                             </div>
+                            <div class="dropdown-item dropdown-header" aria-hidden="true">
+                                <span class="checkbox-spacer"></span>
+                                <span class="decision-id">ID</span>
+                                <span class="npv-badge">NPV</span>
+                                <span class="decision-name">Decision</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -468,8 +546,8 @@
                 <div class="control-group" style="gap: 4px;">
                     <span class="control-label">View</span>
                     <div class="view-toggle">
-                        <button class="view-option" data-view="aggregated">Program</button>
-                        <button class="view-option active" data-view="detailed">Decisions</button>
+                        <button class="view-option active" data-view="aggregated">Program</button>
+                        <button class="view-option" data-view="detailed">Decisions</button>
                     </div>
                 </div>
                 
@@ -478,7 +556,7 @@
         </div>
         
         <div class="chart-container">
-            <h2 class="chart-title" id="chartTitle">Quarterly Cashflow Waterfall</h2>
+            <h2 class="chart-title" id="chartTitle">Cumulative Net Cashflow ($k)</h2>
             <div class="chart-wrapper" id="waterfallChart"></div>
             <div class="legend" id="legend"></div>
         </div>
@@ -491,7 +569,7 @@
     <script>
         let decisionData = [];
         let selectedDecisions = new Set();
-        let currentView = 'detailed';
+        let currentView = 'aggregated';
         let currentQuarter = 'all';
         
         // Color scheme
@@ -828,7 +906,8 @@
         
         function updateDecisionDropdown() {
             const menu = document.getElementById('decisionMenu');
-            while (menu.children.length > 1) {
+            // Preserve the Select All row and the header (first two children)
+            while (menu.children.length > 2) {
                 menu.removeChild(menu.lastChild);
             }
             
@@ -840,7 +919,7 @@
                     const npvVal = typeof decision.npv === 'number' ? decision.npv : 0;
                     const npvSign = npvVal >= 0 ? '' : '-';
                     const npvColor = npvVal >= 0 ? '#10b981' : '#ef4444';
-                    const npvText = `<span class="npv-badge" style="color:${npvColor};">${npvSign}$${formatNumber(Math.round(Math.abs(npvVal)))}k</span>`;
+                    const npvText = `<span class="npv-badge">${npvSign}$${formatNumber(Math.round(Math.abs(npvVal)))}k</span>`;
 
                     // Render item without the description line to keep the dropdown concise
                     item.innerHTML = `
@@ -912,6 +991,11 @@
                 document.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 currentView = this.dataset.view;
+                // Update chart title depending on view
+                const chartTitle = document.getElementById('chartTitle');
+                if (chartTitle) {
+                    chartTitle.textContent = 'Cumulative Net Cashflow ($k)';
+                }
                 updateDisplay();
             });
         });
@@ -951,8 +1035,28 @@
                 }).join('');
             }
             
-            updateWaterfallChart(selectedData);
-            updateLegend();
+            // Render chart according to the selected view:
+            // - 'detailed' (Decisions): waterfall bars
+            // - 'aggregated' (Program): cumulative continuous line
+            if (currentView === 'detailed') {
+                updateWaterfallChart(selectedData);
+                updateLegend();
+            } else {
+                const series = processLineData(selectedData);
+                drawLine(series, true);
+                // Update legend for line chart
+                const legend = document.getElementById('legend');
+                if (legend) {
+                    legend.innerHTML = '';
+                    const div = document.createElement('div');
+                    div.className = 'legend-item';
+                    div.innerHTML = `
+                        <div class="legend-color" style="background: #8F29FC"></div>
+                        <span>Cumulative Net</span>
+                    `;
+                    legend.appendChild(div);
+                }
+            }
             // Refresh the dropdown button label to show how many decisions are selected
             updateDecisionButton();
         }
@@ -1156,7 +1260,7 @@
             const y = d3.scaleLinear()
                 .domain([yMin - yPadding, yMax + yPadding])
                 .range([height, 0]);
-            
+
             // Identify quarter boundaries
             const quarterBoundaries = [];
             let lastQuarter = null;
@@ -1169,18 +1273,34 @@
                 }
             });
             
-            // Add quarter background shading
-            quarterBoundaries.forEach((boundary, idx) => {
-                if (idx % 2 === 0) {
-                    g.append("rect")
-                        .attr("x", x(boundary.start))
-                        .attr("y", 0)
-                        .attr("width", x(boundary.end) - x(boundary.start) + x.bandwidth())
-                        .attr("height", height)
-                        .attr("fill", "#f8fafc")
-                        .attr("opacity", 0.5);
-                }
+            // Draw vertical midpoint lines between quarter labels
+            const quarterCenters = quarterBoundaries.map(boundary => (x(boundary.start) + x(boundary.end) + x.bandwidth()) / 2);
+            const quarterMidpoints = [];
+            for (let i = 0; i < quarterCenters.length - 1; i++) {
+                quarterMidpoints.push((quarterCenters[i] + quarterCenters[i+1]) / 2);
+            }
+            quarterMidpoints.forEach(mx => {
+                g.append('line')
+                    .attr('class','quarter-midline')
+                    .attr('x1', mx)
+                    .attr('x2', mx)
+                    .attr('y1', 0)
+                    .attr('y2', height);
             });
+
+            // Draw horizontal grid lines matching the vertical midline style
+            // Use y axis ticks to position the horizontal guides
+            const yTicks = y.ticks ? y.ticks() : [];
+            yTicks.forEach(tick => {
+                g.append('line')
+                    .attr('class', 'quarter-midline')
+                    .attr('x1', 0)
+                    .attr('x2', width)
+                    .attr('y1', y(tick))
+                    .attr('y2', y(tick));
+            });
+
+            // Quarter background shading removed to avoid visual variation
             
             // Add quarter divider lines
             quarterBoundaries.forEach((boundary, idx) => {
@@ -1190,9 +1310,8 @@
                         .attr("x2", x(boundary.start) - x.bandwidth() * 0.05)
                         .attr("y1", 0)
                         .attr("y2", height)
-                        .attr("stroke", "#cbd5e0")
+                        .attr("stroke", "#D3CAD9")
                         .attr("stroke-width", 1)
-                        .attr("stroke-dasharray", "3,3")
                         .attr("opacity", 0.5);
                 }
             });
@@ -1284,20 +1403,14 @@
             g.append("g")
                 .call(yAxis)
                 .selectAll("text")
-                .style("fill", "#001C66");
+                .style("fill", "#001C66")
+                .style("font-size", "14px")
+                .style("font-weight", "600");
             
             g.selectAll(".domain, .tick line")
                 .style("stroke", "#001C66");
             
-            // Add axis label
-            g.append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 0 - margin.left + 15)
-                .attr("x", 0 - (height / 2))
-                .attr("text-anchor", "middle")
-                .style("font-size", "12px")
-                .style("fill", "#001C66")
-                .text("Cashflow ($k)");
+            // Y-axis label intentionally removed for waterfall (Decisions) view per design
             
             // Add zero line
             g.append("line")
@@ -1318,11 +1431,203 @@
                     .attr("text-anchor", "middle")
                     .attr("font-weight", "bold")
                     .attr("font-size", "14px")
-                    .attr("fill", lastBar.end >= 0 ? savingsColor : costColor)
+                    .attr("fill", "#8F29FC")
                     .text(`Net: $${formatNumber(lastBar.end)}k`);
             }
         }
         
+        // Build a simple series for line charts: per-quarter net and cumulative
+        function processLineData(data) {
+            function normalizeQ(q) {
+                if (!q) return '';
+                const s = String(q).trim();
+
+                // Q1FY26 or Q1FY2026 or Q1 FY26
+                let m = s.match(/Q\s*(\d+)\s*FY\s*(\d{2,4})/i) || s.match(/Q(\d+)FY(\d{2,4})/i);
+                if (m) {
+                    let qn = +m[1];
+                    let yy = String(m[2]);
+                    if (yy.length === 2) yy = '20' + yy;
+                    return `Q${qn} ${yy}`;
+                }
+
+                // FY26_Q1 or 2026_Q1 or 2026 Q1
+                m = s.match(/(?:FY\s*)?(\d{2,4})[ _\-]*Q\s*(\d+)/i);
+                if (m) {
+                    let year = String(m[1]);
+                    if (year.length === 2) year = '20' + year;
+                    const qn = +m[2];
+                    return `Q${qn} ${year}`;
+                }
+
+                // Q1 2024 or Q1_2024
+                m = s.match(/Q\s*(\d+)\s*(\d{4})/i) || s.match(/Q(\d+)[ _]?(\d{4})/i);
+                if (m) return `Q${+m[1]} ${m[2]}`;
+
+                // 2024 Q1
+                m = s.match(/(\d{4})\s*Q\s*(\d+)/i);
+                if (m) return `Q${+m[2]} ${m[1]}`;
+
+                return s;
+            }
+
+            const allQuarters = [...new Set(data.flatMap(d => (d.quarters || []).map(normalizeQ)))].filter(Boolean);
+
+            allQuarters.sort((a, b) => {
+                const pa = a.match(/Q(\d+)\s*(\d{4})/i);
+                const pb = b.match(/Q(\d+)\s*(\d{4})/i);
+                const ay = pa ? parseInt(pa[2]) : 0;
+                const by = pb ? parseInt(pb[2]) : 0;
+                const aq = pa ? parseInt(pa[1]) : 0;
+                const bq = pb ? parseInt(pb[1]) : 0;
+                if (ay !== by) return ay - by;
+                if (aq !== bq) return aq - bq;
+                return String(a).localeCompare(String(b));
+            });
+
+            const quarterMap = new Map();
+            allQuarters.forEach(q => quarterMap.set(q, 0));
+
+            data.forEach(decision => {
+                (decision.quarters || []).forEach((qRaw, i) => {
+                    const q = normalizeQ(qRaw);
+                    if (!q) return;
+                    const cost = decision.costs[i] || 0;
+                    const savings = decision.savings[i] || 0;
+                    quarterMap.set(q, (quarterMap.get(q) || 0) + (savings - cost));
+                });
+            });
+
+            let cumulative = 0;
+            const series = allQuarters.map(q => {
+                const net = quarterMap.get(q) || 0;
+                cumulative += net;
+                return { quarter: q, net: net, cumulative: cumulative };
+            });
+
+            return series;
+        }
+
+        function drawLine(series, useCumulative = true) {
+            const container = d3.select("#waterfallChart");
+            container.selectAll("*").remove();
+
+            if (!series || series.length === 0) {
+                const c = d3.select("#waterfallChart");
+                c.append("div")
+                    .style("text-align", "center")
+                    .style("padding", "50px")
+                    .style("color", "#001C66")
+                    .text("Please select decisions to display the chart");
+                return;
+            }
+
+            const margin = {top: 15, right: 70, bottom: 50, left: 70};
+            const width = container.node().getBoundingClientRect().width - margin.left - margin.right;
+            const height = 360 - margin.top - margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scalePoint().domain(series.map((d,i) => i)).range([0, width]).padding(0.5);
+
+            const values = series.map(d => useCumulative ? d.cumulative : d.net);
+            const yMin = d3.min(values);
+            const yMax = d3.max(values);
+            const yPadding = (yMax - yMin) * 0.1;
+            const y = d3.scaleLinear().domain([yMin - yPadding, yMax + yPadding]).range([height, 0]);
+
+            const line = d3.line()
+                .x((d,i) => x(i))
+                .y(d => y(useCumulative ? d.cumulative : d.net))
+                .curve(d3.curveMonotoneX);
+
+            // Draw vertical midpoint lines between quarter labels
+            const centers = series.map((d,i) => x(i));
+            const midpoints = [];
+            for (let i = 0; i < centers.length - 1; i++) {
+                midpoints.push((centers[i] + centers[i+1]) / 2);
+            }
+            midpoints.forEach(mx => {
+                g.append('line')
+                    .attr('class','quarter-midline')
+                    .attr('x1', mx)
+                    .attr('x2', mx)
+                    .attr('y1', 0)
+                    .attr('y2', height);
+            });
+
+            // Draw horizontal grid lines matching the vertical midline style
+            // Use y axis ticks to position the horizontal guides
+            const yTicksLine = y.ticks ? y.ticks() : [];
+            yTicksLine.forEach(tick => {
+                g.append('line')
+                    .attr('class', 'quarter-midline')
+                    .attr('x1', 0)
+                    .attr('x2', width)
+                    .attr('y1', y(tick))
+                    .attr('y2', y(tick));
+            });
+
+            g.append("path")
+                .datum(series)
+                .attr("fill", "none")
+                .attr("stroke", "#8F29FC")
+                .attr("stroke-width", 3)
+                .attr("d", line);
+
+            g.selectAll(".pt").data(series).enter().append("circle")
+                .attr("class","pt")
+                .attr("cx", (d,i) => x(i))
+                .attr("cy", d => y(useCumulative ? d.cumulative : d.net))
+                .attr("r", 4)
+                .attr("fill", "#8F29FC");
+
+            // x labels
+            series.forEach((d,i) => {
+                g.append("text")
+                  .attr("x", x(i))
+                  .attr("y", height + 25)
+                  .attr("text-anchor", "middle")
+                  .text(d.quarter)
+                  .style("font-size","12px")
+                  .style("font-weight","600")
+                  .style("fill","#001C66");
+            });
+
+            const yAxis = d3.axisLeft(y).tickFormat(v => `$${formatNumber(v)}k`);
+            g.append("g")
+                .call(yAxis)
+                .selectAll("text")
+                .style("fill", "#001C66")
+                .style("font-size", "14px")
+                .style("font-weight", "600");
+
+            // zero line
+            g.append("line")
+                .attr("x1", 0)
+                .attr("x2", width)
+                .attr("y1", y(0))
+                .attr("y2", y(0))
+                .attr("stroke", "#001C66")
+                .attr("stroke-width", 1.5)
+                .attr("opacity", 0.7);
+
+            // final net label
+            const last = series[series.length-1];
+            g.append("text")
+                .attr("x", x(series.length-1))
+                .attr("y", y(useCumulative ? last.cumulative : last.net) - 10)
+                .attr("text-anchor", "middle")
+                .attr("font-weight", "bold")
+                .attr("font-size", "14px")
+                .attr("fill", "#8F29FC")
+                .text(`Net: $${formatNumber(useCumulative ? last.cumulative : last.net)}k`);
+        }
+
         function updateLegend() {
             const legend = document.getElementById('legend');
             legend.innerHTML = '';
