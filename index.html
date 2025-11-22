@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financials</title>
+    <title>Test</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
@@ -369,13 +369,16 @@
 <body>
     <div class="dashboard-container">
         <div class="dashboard-header">
-            <h1 class="dashboard-title" style="margin-bottom: 12px;">Financials</h1>
+            <h1 class="dashboard-title" style="margin-bottom: 12px;">Test</h1>
             
             <div class="metrics-row" style="margin-bottom: 0; background: rgba(248, 250, 252, 0.5); padding: 8px; border-radius: 6px;">
                 <div class="metric-card">
                     <div class="metric-value">
                         <span id="totalNPV">$0</span>
                         <span class="metric-suffix">k</span>
+                        <div id="waccInline" style="margin-left:20px; font-size:13px; font-weight:600; color:#001C66; display:flex; align-items:baseline;">
+                            WACC = <span id="waccDisplay" style="margin-left:6px;">7.35%</span>
+                        </div>
                     </div>
                     <div class="metric-label">Total NPV</div>
                 </div>
@@ -461,6 +464,19 @@
             '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899',
             '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#ef4444'
         ];
+
+        // Discount rate (WACC) used to compute discounted NPV
+        const WACC = 0.0735; // 7.35%
+
+        // Helper to parse quarter strings like "Q1 2024" into sortable parts
+        function parseQuarter(q) {
+            if (!q) return { year: 0, q: 0 };
+            const m = /Q(\d+)\s*[-/]?\s*(\d{4})/.exec(q);
+            if (m) return { year: +m[2], q: +m[1] };
+            const m2 = /(\d{4})/.exec(q);
+            if (m2) return { year: +m2[1], q: 0 };
+            return { year: 0, q: 0 };
+        }
         
         window.addEventListener('DOMContentLoaded', function() {
             // Try to load from decision-financials.csv file
@@ -567,8 +583,7 @@
                         description: (row['Description'] || row['description'] || row[' Description'] || '').trim ? (row['Description'] || row['description'] || '').trim() : '',
                         quarters: [],
                         costs: [],
-                        savings: [],
-                        npv: parseFloat(row['NPV'] || row['npv'] || row[' NPV'] || 0)
+                        savings: []
                     };
                 }
                 
@@ -588,6 +603,32 @@
             if (decisionData.length > 0) {
                 console.log('Sample decision:', decisionData[0]);
             }
+
+            // Compute discounted NPV per decision using WACC
+            Object.values(grouped).forEach(d => {
+                // Build an array of quarter entries and sort them chronologically
+                const entries = (d.quarters || []).map((q, i) => ({
+                    quarter: q,
+                    cost: d.costs[i] || 0,
+                    savings: d.savings[i] || 0
+                }));
+
+                entries.sort((a, b) => {
+                    const A = parseQuarter(a.quarter);
+                    const B = parseQuarter(b.quarter);
+                    if (A.year !== B.year) return A.year - B.year;
+                    if (A.q !== B.q) return A.q - B.q;
+                    return String(a.quarter).localeCompare(String(b.quarter));
+                });
+
+                // Compute discounted NPV: sum_{t=0..} (savings_t - cost_t) / (1+WACC)^t
+                let npv = 0;
+                for (let t = 0; t < entries.length; t++) {
+                    const cf = (entries[t].savings || 0) - (entries[t].cost || 0);
+                    npv += cf / Math.pow(1 + WACC, t);
+                }
+                d.npv = npv;
+            });
             
             const statusText = isTestData ? ' (Test Data)' : '';
             document.getElementById('decisionDropdown').innerHTML = 
@@ -722,8 +763,25 @@
         function processWaterfallData(data) {
             const waterfallData = [];
             
-            // Get all unique quarters and sort them
-            const allQuarters = [...new Set(data.flatMap(d => d.quarters))].sort();
+            // Get all unique quarters and sort them chronologically (by year then quarter)
+            const parseQuarter = q => {
+                if (!q) return { year: 0, q: 0 };
+                // Expect formats like "Q1 2024", "Q2-2025", etc.
+                const m = /Q(\d+)\s*[-/]?\s*(\d{4})/.exec(q);
+                if (m) return { year: +m[2], q: +m[1] };
+                const m2 = /(\d{4})/.exec(q);
+                if (m2) return { year: +m2[1], q: 0 };
+                return { year: 0, q: 0 };
+            };
+
+            const allQuarters = [...new Set(data.flatMap(d => d.quarters))];
+            allQuarters.sort((a, b) => {
+                const A = parseQuarter(a);
+                const B = parseQuarter(b);
+                if (A.year !== B.year) return A.year - B.year;
+                if (A.q !== B.q) return A.q - B.q;
+                return String(a).localeCompare(String(b));
+            });
             
             // Prepare data for waterfall
             allQuarters.forEach(quarter => {
@@ -764,19 +822,27 @@
                     d => d.quarter,
                     d => d.type
                 );
-                
+
+                // Build aggregatedData in the same sorted quarter order to ensure grouping
                 const aggregatedData = [];
-                aggregated.forEach((types, quarter) => {
-                    types.forEach((value, type) => {
-                        aggregatedData.push({
-                            quarter: quarter,
-                            decision: 'All Decisions',
-                            type: type,
-                            value: value,
-                            label: `${quarter} ${type === 'cost' ? 'Total Costs' : 'Total Savings'}`
-                        });
+                allQuarters.forEach(quarter => {
+                    const types = aggregated.get(quarter);
+                    if (!types) return;
+                    // Ensure consistent ordering: costs then savings
+                    ['cost', 'savings'].forEach(type => {
+                        const value = types.get(type) || 0;
+                        if (value !== 0) {
+                            aggregatedData.push({
+                                quarter: quarter,
+                                decision: 'All Decisions',
+                                type: type,
+                                value: value,
+                                label: `${quarter} ${type === 'cost' ? 'Total Costs' : 'Total Savings'}`
+                            });
+                        }
                     });
                 });
+
                 return aggregatedData;
             }
             
