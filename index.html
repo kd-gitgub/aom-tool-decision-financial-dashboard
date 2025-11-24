@@ -42,6 +42,7 @@
             padding: 30px;
             margin-bottom: 30px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
         
         .dashboard-title {
@@ -525,6 +526,9 @@
 <body>
     <div class="dashboard-container">
         <div class="dashboard-header">
+            <div id="lastUpdated" style="position:absolute; top:14px; right:18px; color:var(--blue); font-size:13px; font-weight:600;">
+                Last updated: <span id="lastUpdatedValue">—</span>
+            </div>
             <h1 class="dashboard-title" style="margin-bottom: 12px;">AOM Tooling Investment Profile</h1>
             <div class="dashboard-subtitle">Individual decision contributions</div>
 
@@ -691,43 +695,78 @@
             const csvUrlPrimary = 'decision-financials.csv?t=' + Date.now();
             fetch(csvUrlPrimary)
                 .then(response => {
-                    
                     if (!response.ok) {
                         throw new Error(`CSV not found (status: ${response.status})`);
                     }
-                    return response.text();
+                    const lm = response.headers.get('last-modified');
+                    return response.text().then(text => ({ text, lm }));
                 })
-                .then(csvText => {
+                .then(({ text, lm }) => {
                     // CSV loaded successfully
-                    parseAndLoadData(csvText, false);
+                    parseAndLoadData(text, false);
+                    updateLastUpdatedFromHeader(lm);
                 })
                 .catch(error => {
                     console.error('Primary CSV load failed:', error);
-                    
+
                     // Try alternative filename without hyphen
-                    
                     const csvUrlAlt = 'decisionfinancials.csv?t=' + Date.now();
                     return fetch(csvUrlAlt)
                         .then(response => {
                             if (!response.ok) throw new Error('Alternative also not found');
-                            
-                            return response.text();
+                            const lm = response.headers.get('last-modified');
+                            return response.text().then(text => ({ text, lm }));
                         })
-                        .then(csvText => {
-                            parseAndLoadData(csvText, false);
+                        .then(({ text, lm }) => {
+                            parseAndLoadData(text, false);
+                            updateLastUpdatedFromHeader(lm);
                         })
                         .catch(altError => {
                             console.error('Both filenames failed:', altError);
-                            document.getElementById('decisionDropdown').innerHTML = 
+                            document.getElementById('decisionDropdown').innerHTML =
                                 '<span class="status-indicator empty"></span>Loading test data...';
-                            
+
                             // Fallback to dummy data for testing
                             setTimeout(() => {
-                                
+                                updateLastUpdatedForTestData();
                                 loadDummyData();
                             }, 500);
                         });
                 });
+        }
+
+        function updateLastUpdatedFromHeader(headerValue) {
+            const el = document.getElementById('lastUpdatedValue');
+            if (!el) return;
+            if (!headerValue) {
+                // If server didn't provide Last-Modified, use a loaded timestamp
+                const now = new Date();
+                el.textContent = formatDateUTC(now);
+                return;
+            }
+            const parsed = new Date(headerValue);
+            if (isNaN(parsed)) {
+                el.textContent = headerValue;
+            } else {
+                el.textContent = formatDateUTC(parsed);
+            }
+        }
+
+        function updateLastUpdatedForTestData() {
+            const el = document.getElementById('lastUpdatedValue');
+            if (!el) return;
+            el.textContent = 'Test data';
+        }
+
+        function formatDateUTC(d) {
+            // Format like: 24 Nov 2025, 18:41:22 GMT
+            const day = d.getUTCDate();
+            const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+            const year = d.getUTCFullYear();
+            const hh = String(d.getUTCHours()).padStart(2, '0');
+            const mm = String(d.getUTCMinutes()).padStart(2, '0');
+            const ss = String(d.getUTCSeconds()).padStart(2, '0');
+            return `${day} ${month} ${year}, ${hh}:${mm}:${ss} GMT`;
         }
         
         function parseAndLoadData(csvText, isTestData = false) {
